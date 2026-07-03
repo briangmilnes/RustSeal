@@ -1,0 +1,28 @@
+start: 13:59:01
+/home/milnes/projects/RustSeal/projects  files=297422  88751.8ms
+TOTAL  88773.2ms
+wrote /home/milnes/projects/RustSeal/analyses/loc-grand-total.md
+	Command being timed: "sh /home/milnes/projects/RustSeal/scripts/count-loc.sh"
+	User time (seconds): 82.56
+	System time (seconds): 3.08
+	Percent of CPU this job got: 96%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:28.78
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 123060
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 44992
+	Voluntary context switches: 64772
+	Involuntary context switches: 1158
+	Swaps: 0
+	File system inputs: 1971536
+	File system outputs: 16
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+end: 14:00:29

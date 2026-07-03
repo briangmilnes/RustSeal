@@ -1,0 +1,10 @@
+# The collected corpus — 3.3 GB / ~297K source files, reproducible from
+# scripts/clonetop1000rustgithubs.sh + data/top1000rustgithubs.txt. Not checked in.
+RustProjects/
+
+# Editor backups
+*~
+
+# GRASE hook sidecar state (rule 4.8) — hook-internal, not committed
+.claude/grase-state.tsv
+.claude/grase-tool-state/
