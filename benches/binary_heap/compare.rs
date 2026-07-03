@@ -14,7 +14,7 @@
 
 use rand::seq::SliceRandom;
 use rustseal::binary_heap::unsafe_binary_heap::UnsafeBinaryHeap;
-use rustseal::binary_heap::unsafe_lazy_hole_resort_binary_heap::UnsafeLazyHoleResortBinaryHeap;
+use rustseal::binary_heap::lazy_hole_resort_binary_heap::LazyHoleResortBinaryHeap;
 
 fn main() {
     divan::main();
@@ -77,10 +77,10 @@ macro_rules! impl_bench_heap {
     };
 }
 impl_bench_heap!(UnsafeBinaryHeap);
-impl_bench_heap!(UnsafeLazyHoleResortBinaryHeap);
+impl_bench_heap!(LazyHoleResortBinaryHeap);
 
 type Original = UnsafeBinaryHeap<u32>;
-type Winner = UnsafeLazyHoleResortBinaryHeap<u32>;
+type Winner = LazyHoleResortBinaryHeap<u32>;
 
 /// Build a heap of the first 1000 of a shuffled 100k stream, then walk the remaining 99k keeping the
 /// 1000 smallest via `peek_mut` (the max is replaced ~1% of the time). The whole loop is timed.

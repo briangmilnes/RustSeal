@@ -1,0 +1,629 @@
+   Compiling rustseal v0.1.0 (/home/milnes/projects/RustSeal)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.01s
+     Running unittests src/lib.rs (target/debug/deps/rustseal-fa8591a6653ac37d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/binary_heap/lazy_hole_resort_binary_heap.rs (target/debug/deps/lazy_hole_resort_binary_heap-95e2e61309555e11)
+
+running 35 tests
+test test_append ... ok
+test test_drain ... ok
+test test_append_to_empty ... ok
+test test_drain_forget ... ok
+test test_drain_sorted ... ok
+test test_drain_sorted_collect ... ok
+test test_drain_sorted_forget ... ok
+test test_drain_sorted_leak ... ok
+test test_empty_peek ... ok
+test test_empty_peek_mut ... ok
+test test_empty_pop ... ok
+test test_exact_size_iterator ... ok
+test test_extend_ref ... ok
+test test_extend_specialization ... ok
+test test_in_place_iterator_specialization ... ignored, in-place iterator specialization needs std-internal AsVecIntoIter; not implemented
+test test_from_iter ... ok
+test test_into_iter_collect ... ok
+test test_into_iter_rev_collect ... ok
+test test_into_iter_size_hint ... ok
+test test_into_iter_sorted_collect ... ok
+test test_iter_rev_cloned_collect ... ok
+test test_iterator ... ok
+test test_peek_and_pop ... ok
+test test_peek_mut ... ok
+test test_peek_mut_leek ... ok
+test test_peek_mut_pop ... ok
+test test_pop_if ... ok
+test test_push ... ok
+test test_push_unique ... ok
+test test_retain ... ok
+test test_resort_after_comparison_panic ... ok
+test test_retain_catch_unwind ... ok
+test test_trusted_len ... ok
+test test_to_vec ... ok
+test panic_safe ... ok
+
+test result: ok. 34 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/binary_heap/unsafe_binary_heap.rs (target/debug/deps/unsafe_binary_heap-604c9aa34dbf0b77)
+
+running 34 tests
+test test_append ... ok
+test test_append_to_empty ... ok
+test test_drain ... ok
+test test_drain_sorted ... ok
+test test_drain_forget ... ok
+test test_drain_sorted_collect ... ok
+test test_drain_sorted_forget ... ok
+test test_drain_sorted_leak ... ok
+test test_empty_peek ... ok
+test test_empty_peek_mut ... ok
+test test_empty_pop ... ok
+test test_exact_size_iterator ... ok
+test test_extend_ref ... ok
+test test_in_place_iterator_specialization ... ignored, in-place iterator specialization needs std-internal AsVecIntoIter; not implemented
+test test_extend_specialization ... ok
+test test_from_iter ... ok
+test test_into_iter_collect ... ok
+test test_into_iter_rev_collect ... ok
+test test_into_iter_size_hint ... ok
+test test_into_iter_sorted_collect ... ok
+test test_iter_rev_cloned_collect ... ok
+test test_iterator ... ok
+test test_peek_and_pop ... ok
+test test_peek_mut ... ok
+test test_peek_mut_leek ... ok
+test test_peek_mut_pop ... ok
+test test_pop_if ... ok
+test test_push ... ok
+test test_push_unique ... ok
+test test_retain ... ok
+test test_retain_catch_unwind ... ok
+test test_to_vec ... ok
+test test_trusted_len ... ok
+test panic_safe ... ok
+
+test result: ok. 33 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/vec_deque/lazy_loss_recovery/vec_deque.rs (target/debug/deps/vec_deque_lazy_loss_recovery-1e63a352bf730914)
+
+running 110 tests
+test test_append ... ok
+test test_append_double_drop ... ok
+test test_append_zst_capacity_overflow - should panic ... ok
+test test_as_mut_slices ... ok
+test test_collect_from_into_iter_keeps_allocation ... ignored, asserts the zero-copy Vec::IntoIter -> VecDeque buffer reuse, which needs the alloc-private `vec::IntoIter::into_vecdeque` (SpecFromIter specialization). That method is not nameable outside `alloc`, so its impl is corpsed in spec_from_iter.rs; from_iter still works via the generic build-a-Vec-then-.into() path, but it does not preserve the source pointer.
+test test_binary_search_by_key ... ok
+test test_binary_search_by ... ok
+test test_as_slices ... ok
+test test_binary_search ... ok
+test test_drain ... ok
+test test_clone ... ok
+test test_drain_forget_commits_range_keeps_rest_no_leak ... ok
+test test_contains ... ok
+test test_drain_forget_from_zero_drops_all_no_leak ... ok
+test test_drop ... ok
+test test_drain_leak ... ok
+test test_drop_clear ... ok
+test test_drop_with_pop ... ok
+test test_drop_panic ... ok
+test test_eq ... ok
+test test_eq_after_rotation ... ok
+test test_extend_and_prepend_from_within ... ok
+test test_extend_from_within ... ok
+test test_extend_from_within_clone ... ok
+test test_extend_front ... ok
+test test_extend_from_within_clone_panic ... ok
+test test_extend_front_specialization_copy_slice ... ok
+test test_extend_front_specialization_deque_drain ... ok
+test test_extend_front_specialization_vec_into_iter ... ok
+test test_extend_ref ... ok
+test test_extract_if_forget_retains_whole_deque ... ok
+test test_extract_if_predicate_panic_retains_no_leak ... ok
+test test_from_iter ... ok
+test test_front ... ok
+test test_get ... ok
+test test_from_zero_sized_vec ... ok
+test test_get_mut ... ok
+test test_hash ... ok
+test test_index ... ok
+test test_index_out_of_bounds - should panic ... ok
+test test_into_iter ... ok
+test test_iter ... ok
+test test_mut_iter ... ok
+test test_mut_rev_iter ... ok
+test test_hash_after_rotation ... ok
+test test_mut_rev_iter_wrap ... ok
+test test_is_empty ... ok
+test test_ord ... ok
+test test_param_int ... ok
+test test_param_reccy ... ok
+test test_param_taggypar ... ok
+test test_partial_eq_array ... ok
+test test_partition_point ... ok
+test test_param_taggy ... ok
+test test_pop_if ... ok
+test test_pop_if_empty ... ok
+test test_pop_if_mutates ... ok
+test test_prepend_from_within ... ok
+test test_prepend_from_within_clone ... ok
+test test_push_front_grow ... ok
+test test_prepend_from_within_clone_panic ... ok
+test test_range_end_overflow - should panic ... ok
+test test_reserve ... ok
+test test_reserve_exact ... ok
+test test_reserve_exact_2 ... ok
+test test_reserve_grow ... ok
+test test_resize_keeps_reserved_space_from_item ... ok
+test test_retain ... ok
+test test_range_start_overflow - should panic ... ok
+test test_rev_iter ... ok
+test test_rotate_left_parts ... ok
+test test_rotate_nop ... ok
+test test_rotate_left_random ... ok
+test test_rotate_right_parts ... ok
+test test_rotate_right_random ... ok
+test test_show ... ok
+test test_simple ... ok
+test test_splice ... ok
+test test_splice_forget ... ok
+test test_splice_forget_keeps_deque_elements_no_leak ... ok
+test test_splice_inclusive_out_of_bounds - should panic ... ok
+test test_splice_inclusive_range ... ok
+test test_splice_inclusive_range2 ... ok
+test test_splice_items_zero_sized ... ok
+test test_splice_out_of_bounds - should panic ... ok
+test test_splice_unbounded ... ok
+test test_splice_wrapping ... ok
+test test_splice_wrapping_and_resize ... ok
+test test_swap ... ok
+test test_truncate_front ... ok
+test test_try_fold_empty ... ok
+test test_try_fold_exhaust_wrap ... ok
+test test_try_fold_moves_iter ... ok
+test test_try_fold_none ... ok
+test test_try_fold_ok ... ok
+test test_try_fold_rotated ... ok
+test test_try_fold_unit ... ok
+test test_try_fold_unit_none ... ok
+test test_try_fold_wraparound ... ok
+test test_try_reserve ... ok
+test test_try_reserve_exact ... ok
+test test_try_rfold_moves_iter ... ok
+test test_try_rfold_rotated ... ok
+test test_try_with_capacity ... ok
+test test_with_capacity ... ok
+test test_with_capacity_non_power_two ... ok
+test truncate_front_leak ... ok
+test truncate_leak ... ok
+test test_zero_sized_push ... ok
+test test_append_permutations ... ok
+
+test result: ok. 109 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/vec_deque/std/vec_deque.rs (target/debug/deps/vec_deque_std-b536518d131336b7)
+
+running 110 tests
+test test_append_double_drop ... ok
+test test_append ... ok
+test test_append_zst_capacity_overflow - should panic ... ok
+test test_binary_search ... ok
+test test_as_mut_slices ... ok
+test test_binary_search_by_key ... ok
+test test_collect_from_into_iter_keeps_allocation ... ignored, asserts the zero-copy Vec::IntoIter -> VecDeque buffer reuse, which needs the alloc-private `vec::IntoIter::into_vecdeque` (SpecFromIter specialization). That method is not nameable outside `alloc`, so its impl is corpsed in spec_from_iter.rs; from_iter still works via the generic build-a-Vec-then-.into() path, but it does not preserve the source pointer.
+test test_clone ... ok
+test test_as_slices ... ok
+test test_binary_search_by ... ok
+test test_contains ... ok
+test test_drain_forget_from_zero_leaks_whole_deque ... ok
+test test_drain ... ok
+test test_drain_forget_leaks_drained_range_and_tail ... ok
+test test_drain_leak ... ok
+test test_drop ... ok
+test test_drop_clear ... ok
+test test_drop_panic ... ok
+test test_drop_with_pop ... ok
+test test_eq ... ok
+test test_eq_after_rotation ... ok
+test test_extend_and_prepend_from_within ... ok
+test test_extend_from_within ... ok
+test test_extend_from_within_clone_panic ... ok
+test test_extend_front_specialization_copy_slice ... ok
+test test_extend_front_specialization_deque_drain ... ok
+test test_extend_front_specialization_vec_into_iter ... ok
+test test_extend_from_within_clone ... ok
+test test_extend_ref ... ok
+test test_extend_front ... ok
+test test_extract_if_forget_leaks_whole_deque ... ok
+test test_extract_if_predicate_panic_retains_no_leak ... ok
+test test_from_iter ... ok
+test test_get ... ok
+test test_front ... ok
+test test_get_mut ... ok
+test test_hash ... ok
+test test_index ... ok
+test test_from_zero_sized_vec ... ok
+test test_index_out_of_bounds - should panic ... ok
+test test_hash_after_rotation ... ok
+test test_is_empty ... ok
+test test_mut_rev_iter ... ok
+test test_param_reccy ... ok
+test test_partition_point ... ok
+test test_pop_if_empty ... ok
+test test_param_taggypar ... ok
+test test_prepend_from_within ... ok
+test test_iter ... ok
+test test_mut_rev_iter_wrap ... ok
+test test_ord ... ok
+test test_pop_if ... ok
+test test_prepend_from_within_clone ... ok
+test test_param_int ... ok
+test test_prepend_from_within_clone_panic ... ok
+test test_push_front_grow ... ok
+test test_range_start_overflow - should panic ... ok
+test test_reserve ... ok
+test test_range_end_overflow - should panic ... ok
+test test_param_taggy ... ok
+test test_reserve_exact ... ok
+test test_reserve_exact_2 ... ok
+test test_reserve_grow ... ok
+test test_resize_keeps_reserved_space_from_item ... ok
+test test_partial_eq_array ... ok
+test test_pop_if_mutates ... ok
+test test_into_iter ... ok
+test test_mut_iter ... ok
+test test_retain ... ok
+test test_rev_iter ... ok
+test test_show ... ok
+test test_rotate_left_parts ... ok
+test test_simple ... ok
+test test_splice_forget ... ok
+test test_splice ... ok
+test test_splice_forget_leaks_range_tail_and_replacement ... ok
+test test_splice_inclusive_out_of_bounds - should panic ... ok
+test test_splice_inclusive_range2 ... ok
+test test_splice_inclusive_range ... ok
+test test_splice_items_zero_sized ... ok
+test test_splice_unbounded ... ok
+test test_splice_wrapping ... ok
+test test_splice_out_of_bounds - should panic ... ok
+test test_rotate_right_parts ... ok
+test test_splice_wrapping_and_resize ... ok
+test test_rotate_nop ... ok
+test test_rotate_left_random ... ok
+test test_try_fold_empty ... ok
+test test_rotate_right_random ... ok
+test test_try_fold_exhaust_wrap ... ok
+test test_try_fold_moves_iter ... ok
+test test_try_fold_none ... ok
+test test_try_fold_ok ... ok
+test test_try_fold_rotated ... ok
+test test_swap ... ok
+test test_try_fold_unit ... ok
+test test_try_fold_unit_none ... ok
+test test_try_fold_wraparound ... ok
+test test_try_rfold_moves_iter ... ok
+test test_try_rfold_rotated ... ok
+test test_try_with_capacity ... ok
+test test_with_capacity ... ok
+test test_truncate_front ... ok
+test test_try_reserve ... ok
+test test_try_reserve_exact ... ok
+test test_with_capacity_non_power_two ... ok
+test truncate_front_leak ... ok
+test truncate_leak ... ok
+test test_zero_sized_push ... ok
+test test_append_permutations ... ok
+
+test result: ok. 109 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/vec/lazy_loss_recovery/vec.rs (target/debug/deps/vec_lazy_loss_recovery-2546cd31326bb704)
+
+running 145 tests
+test extract_if_consumed_panic ... ok
+test extract_if_empty ... ok
+test extract_if_ranges ... ok
+test extract_if_false ... ok
+test extract_if_debug ... ok
+test extract_if_complex ... ok
+test extract_if_zst ... ok
+test max_dont_panic ... ok
+test max_insert - should panic ... ok
+test extract_if_true ... ok
+test extract_if_out_of_bounds - should panic ... ok
+test extract_if_unconsumed_panic ... ok
+test extract_if_unconsumed ... ok
+test max_splice - should panic ... ok
+test max_remove - should panic ... ok
+test max_swap_remove - should panic ... ok
+test partialeq_vec_and_prim ... ok
+test partialeq_vec_full ... ok
+test test_append ... ok
+test test_box_zero_allocator ... ok
+test test_clone ... ok
+test test_clone_from ... ok
+test test_cmp ... ok
+test test_debug_fmt ... ok
+test test_collect_after_iterator_clone ... ok
+test test_dedup ... ok
+test test_dedup_by ... ok
+test test_double_drop ... ok
+test test_dedup_by_key ... ok
+test test_drain_empty_vec ... ok
+test test_drain_end_overflow - should panic ... ok
+test test_drain_forget_commits_range_keeps_rest_no_leak ... ok
+test test_drain_forget_from_zero_drops_all_no_leak ... ok
+test test_drain_inclusive_range ... ok
+test test_drain_items ... ok
+test test_drain_index_overflow - should panic ... ok
+test test_drain_inclusive_out_of_bounds - should panic ... ok
+test test_drain_items_reverse ... ok
+test test_drain_keep_rest ... ok
+test test_drain_keep_rest_all ... ok
+test test_drain_keep_rest_none ... ok
+test test_drain_items_zero_sized ... ok
+test test_drain_max_vec_size ... ok
+test test_dedup_unique ... ok
+test test_drain_out_of_bounds - should panic ... ok
+test test_drain_leak ... ok
+test test_drain_range ... ok
+test test_extend ... ok
+test test_drain_start_overflow - should panic ... ok
+test test_extend_from_slice ... ok
+test test_extend_from_within ... ok
+test test_extend_from_within_complete_rande ... ok
+test test_extend_from_within_clone ... ok
+test test_extend_from_within_empty_rande ... ok
+test test_extend_from_within_empty_vec ... ok
+test test_extend_from_within_zst ... ok
+test test_extend_ref ... ok
+test test_extend_from_within_out_of_rande - should panic ... ok
+test test_flatten_clone ... ok
+test test_index ... ok
+test test_extract_if_forget_retains_whole_vec_no_leak ... ok
+test test_from_iter_specialization_panic_during_iteration_drops ... ok
+test test_from_iter_specialization_panic_during_drop_doesnt_leak ... ok
+test test_index_out_of_bounds - should panic ... ok
+test test_indexing ... ok
+test test_into_boxed_slice ... ok
+test test_into_iter_advance_by ... ok
+test test_into_iter_as_mut_slice ... ok
+test test_into_flattened_size_overflow - should panic ... ok
+test test_into_iter_as_slice ... ok
+test test_into_iter_clone ... ok
+test test_extend_from_within_panicking_clone ... ok
+test test_into_iter_debug ... ok
+test test_into_iter_drop_allocator ... ok
+test test_into_iter_next_chunk ... ok
+test test_into_iter_leak ... ok
+test test_into_iter_zst ... ok
+test test_move_items ... ok
+test test_peek_mut ... ok
+test test_move_items_reverse ... ok
+test test_pop_if ... ok
+test test_pop_if_empty ... ok
+test test_push ... ok
+test test_pop_if_mutates ... ok
+test test_reserve ... ok
+test test_reserve_exact ... ok
+test test_retain ... ok
+test test_push_growth_strategy ... ok
+test test_partition ... ok
+test test_retain_maybeuninits ... ok
+test test_slice_out_of_bounds_1 - should panic ... ok
+test test_slice_out_of_bounds_2 - should panic ... ok
+test test_retain_drop_panic ... ok
+test test_splice ... ok
+test test_slice_to_mut ... ok
+test test_retain_pred_panic_no_hole ... ok
+test test_retain_predicate_order ... ok
+test test_retain_pred_panic_with_hole ... ok
+test test_move_items_zero_sized ... ok
+test test_slice_from_mut ... ok
+test test_slice_out_of_bounds_5 - should panic ... ok
+test test_splice_forget_keeps_vec_elements_no_leak ... ok
+test test_splice_inclusive_out_of_bounds - should panic ... ok
+test test_splice_inclusive_range ... ok
+test test_splice_items_zero_sized ... ok
+test test_split_at_mut ... ok
+test test_splice_unbounded ... ok
+test test_splice_out_of_bounds - should panic ... ok
+test test_slice_out_of_bounds_4 - should panic ... ok
+test test_split_off ... ok
+test test_split_off_take_all ... ok
+test test_swap_remove_empty - should panic ... ok
+test test_try_remove ... ok
+test test_stable_pointers ... ok
+test test_slice_from_ref ... ok
+test test_into_iter_count ... ok
+test test_slice_out_of_bounds_3 - should panic ... ok
+test test_splice_forget ... ok
+test test_try_with_capacity ... ok
+test test_vec_cycle ... ok
+test test_try_reserve_exact ... ok
+test test_vec_cycle_wrapped ... ok
+test test_try_reserve ... ok
+test test_vec_dedup_empty ... ok
+test test_vec_dedup_by ... ok
+test test_vec_dedup_one ... ok
+test test_vec_dedup_multiple_ident ... ok
+test test_vec_dedup_partialeq ... ok
+test test_vec_dedup_panicking ... ok
+test test_vec_from_array_mut_ref ... ok
+test test_vec_from_array_ref ... ok
+test test_vec_swap ... ok
+test test_vec_macro_repeat ... ok
+test test_vec_truncate_drop ... ok
+test test_vec_dedup ... ok
+test test_vec_truncate_fail - should panic ... ok
+test test_zero_sized_capacity ... ok
+test test_zero_sized_vec_push ... ok
+test test_zip_unzip ... ok
+test test_zst_capacity ... ok
+test vec_macro_repeating_null_raw_fat_pointer ... ok
+test vec_null_ptr_roundtrip ... ok
+test zero_sized_values ... ok
+test zst_collections_iter_nth_back_regression ... ok
+test overaligned_allocations ... ok
+
+test result: ok. 145 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/vec/std/vec.rs (target/debug/deps/vec_std-ccc84f00faeaad3e)
+
+running 145 tests
+test extract_if_debug ... ok
+test extract_if_complex ... ok
+test extract_if_empty ... ok
+test extract_if_consumed_panic ... ok
+test extract_if_false ... ok
+test extract_if_out_of_bounds - should panic ... ok
+test extract_if_ranges ... ok
+test extract_if_true ... ok
+test extract_if_unconsumed ... ok
+test extract_if_unconsumed_panic ... ok
+test extract_if_zst ... ok
+test max_dont_panic ... ok
+test max_insert - should panic ... ok
+test max_remove - should panic ... ok
+test max_splice - should panic ... ok
+test max_swap_remove - should panic ... ok
+test partialeq_vec_and_prim ... ok
+test partialeq_vec_full ... ok
+test test_append ... ok
+test test_box_zero_allocator ... ok
+test test_clone ... ok
+test test_clone_from ... ok
+test test_cmp ... ok
+test test_collect_after_iterator_clone ... ok
+test test_debug_fmt ... ok
+test test_dedup_by ... ok
+test test_dedup ... ok
+test test_dedup_by_key ... ok
+test test_dedup_unique ... ok
+test test_double_drop ... ok
+test test_drain_empty_vec ... ok
+test test_drain_end_overflow - should panic ... ok
+test test_drain_forget_from_zero_leaks_whole_vec ... ok
+test test_drain_forget_leaks_range_and_tail ... ok
+test test_drain_inclusive_out_of_bounds - should panic ... ok
+test test_drain_inclusive_range ... ok
+test test_drain_index_overflow - should panic ... ok
+test test_drain_items ... ok
+test test_drain_items_reverse ... ok
+test test_drain_items_zero_sized ... ok
+test test_drain_keep_rest ... ok
+test test_drain_keep_rest_all ... ok
+test test_drain_keep_rest_none ... ok
+test test_drain_max_vec_size ... ok
+test test_drain_leak ... ok
+test test_drain_out_of_bounds - should panic ... ok
+test test_drain_start_overflow - should panic ... ok
+test test_drain_range ... ok
+test test_extend ... ok
+test test_extend_from_slice ... ok
+test test_extend_from_within ... ok
+test test_extend_from_within_complete_rande ... ok
+test test_extend_from_within_empty_rande ... ok
+test test_extend_from_within_clone ... ok
+test test_extend_from_within_empty_vec ... ok
+test test_extend_from_within_out_of_rande - should panic ... ok
+test test_extend_from_within_panicking_clone ... ok
+test test_extend_from_within_zst ... ok
+test test_extend_ref ... ok
+test test_extract_if_forget_leaks_whole_vec ... ok
+test test_flatten_clone ... ok
+test test_index ... ok
+test test_from_iter_specialization_panic_during_drop_doesnt_leak ... ok
+test test_from_iter_specialization_panic_during_iteration_drops ... ok
+test test_indexing ... ok
+test test_index_out_of_bounds - should panic ... ok
+test test_into_boxed_slice ... ok
+test test_into_flattened_size_overflow - should panic ... ok
+test test_into_iter_advance_by ... ok
+test test_into_iter_as_mut_slice ... ok
+test test_into_iter_as_slice ... ok
+test test_into_iter_clone ... ok
+test test_into_iter_count ... ok
+test test_into_iter_debug ... ok
+test test_into_iter_drop_allocator ... ok
+test test_into_iter_next_chunk ... ok
+test test_into_iter_leak ... ok
+test test_into_iter_zst ... ok
+test test_move_items ... ok
+test test_move_items_reverse ... ok
+test test_move_items_zero_sized ... ok
+test test_partition ... ok
+test test_peek_mut ... ok
+test test_pop_if ... ok
+test test_pop_if_empty ... ok
+test test_pop_if_mutates ... ok
+test test_push ... ok
+test test_reserve ... ok
+test test_reserve_exact ... ok
+test test_push_growth_strategy ... ok
+test test_retain ... ok
+test test_retain_drop_panic ... ok
+test test_retain_maybeuninits ... ok
+test test_retain_pred_panic_no_hole ... ok
+test test_retain_pred_panic_with_hole ... ok
+test test_retain_predicate_order ... ok
+test test_slice_from_mut ... ok
+test test_slice_from_ref ... ok
+test test_slice_out_of_bounds_1 - should panic ... ok
+test test_slice_out_of_bounds_2 - should panic ... ok
+test test_slice_out_of_bounds_3 - should panic ... ok
+test test_slice_out_of_bounds_4 - should panic ... ok
+test test_slice_out_of_bounds_5 - should panic ... ok
+test test_slice_to_mut ... ok
+test test_splice ... ok
+test test_splice_forget ... ok
+test test_splice_forget_leaks_range_tail_and_replacement ... ok
+test test_splice_inclusive_out_of_bounds - should panic ... ok
+test test_splice_inclusive_range ... ok
+test test_splice_items_zero_sized ... ok
+test test_splice_unbounded ... ok
+test test_splice_out_of_bounds - should panic ... ok
+test test_split_at_mut ... ok
+test test_split_off ... ok
+test test_split_off_take_all ... ok
+test test_stable_pointers ... ok
+test test_swap_remove_empty - should panic ... ok
+test test_try_remove ... ok
+test test_try_reserve ... ok
+test test_try_with_capacity ... ok
+test test_try_reserve_exact ... ok
+test test_vec_cycle ... ok
+test test_vec_cycle_wrapped ... ok
+test test_vec_dedup_by ... ok
+test test_vec_dedup_empty ... ok
+test test_vec_dedup_multiple_ident ... ok
+test test_vec_dedup_one ... ok
+test test_vec_dedup_panicking ... ok
+test test_vec_dedup_partialeq ... ok
+test test_vec_from_array_mut_ref ... ok
+test test_vec_dedup ... ok
+test test_vec_from_array_ref ... ok
+test test_vec_macro_repeat ... ok
+test test_vec_swap ... ok
+test test_vec_truncate_drop ... ok
+test test_zero_sized_capacity ... ok
+test test_vec_truncate_fail - should panic ... ok
+test test_zero_sized_vec_push ... ok
+test test_zip_unzip ... ok
+test test_zst_capacity ... ok
+test vec_macro_repeating_null_raw_fat_pointer ... ok
+test vec_null_ptr_roundtrip ... ok
+test zero_sized_values ... ok
+test zst_collections_iter_nth_back_regression ... ok
+test overaligned_allocations ... ok
+
+test result: ok. 145 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests rustseal
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

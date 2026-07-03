@@ -43,8 +43,8 @@ name = "unsafe_binary_heap"
 path = "tests/binary_heap/unsafe_binary_heap.rs"
 
 [[test]]
-name = "unsafe_lazy_hole_resort_binary_heap"
-path = "tests/binary_heap/unsafe_lazy_hole_resort_binary_heap.rs"
+name = "lazy_hole_resort_binary_heap"
+path = "tests/binary_heap/lazy_hole_resort_binary_heap.rs"
 
 # vec_deque is a variant-comparison harness: one test target per variant (std, lazy_loss_recovery),
 # each the same faithful test suite run against that variant's type.
@@ -79,8 +79,8 @@ name = "unsafe_binary_heap"
 path = "benches/binary_heap/unsafe_binary_heap.rs"
 
 [[bench]]
-name = "unsafe_lazy_hole_resort_binary_heap"
-path = "benches/binary_heap/unsafe_lazy_hole_resort_binary_heap.rs"
+name = "lazy_hole_resort_binary_heap"
+path = "benches/binary_heap/lazy_hole_resort_binary_heap.rs"
 
 # vec_deque variant-comparison harness: one bench target per variant (std, lazy_loss_recovery).
 [[bench]]

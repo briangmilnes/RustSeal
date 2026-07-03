@@ -1,6 +1,6 @@
 // Copyright (C) 2026 Brian G. Milnes <briangmilnes@gmail.com>, All Rights Reserved.
 
-//! Tests for `UnsafeLazyHoleResortBinaryHeap`, a plain copy of the rust-libs 1.96.0 binary_heap test
+//! Tests for `LazyHoleResortBinaryHeap`, a plain copy of the rust-libs 1.96.0 binary_heap test
 //! suite (alloctests/tests/collections/binary_heap.rs) with the type name changed. The
 //! `crash_test` helper and the seeded `test_rng` are inlined so the file is self-contained.
 //! `trusted_len` / `exact_size_is_empty` are unlocked via RUSTC_BOOTSTRAP=1 (.cargo/config.toml).
@@ -17,7 +17,7 @@ use std::iter::TrustedLen;
 use std::mem;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
-use rustseal::binary_heap::unsafe_lazy_hole_resort_binary_heap::{UnsafeLazyHoleResortBinaryHeap, UnsafeLazyHoleResortDrain, UnsafeLazyHoleResortPeekMut};
+use rustseal::binary_heap::lazy_hole_resort_binary_heap::{LazyHoleResortBinaryHeap, LazyHoleResortDrain, LazyHoleResortPeekMut};
 
 use crash_test::{CrashTestDummy, Panic};
 
@@ -36,7 +36,7 @@ fn test_rng() -> rand_xorshift::XorShiftRng {
 fn test_iterator() {
     let data = vec![5, 9, 3];
     let iterout = [9, 5, 3];
-    let heap = UnsafeLazyHoleResortBinaryHeap::from(data);
+    let heap = LazyHoleResortBinaryHeap::from(data);
     let mut i = 0;
     for el in &heap {
         assert_eq!(*el, iterout[i]);
@@ -48,7 +48,7 @@ fn test_iterator() {
 fn test_iter_rev_cloned_collect() {
     let data = vec![5, 9, 3];
     let iterout = vec![3, 5, 9];
-    let pq = UnsafeLazyHoleResortBinaryHeap::from(data);
+    let pq = LazyHoleResortBinaryHeap::from(data);
 
     let v: Vec<_> = pq.iter().rev().cloned().collect();
     assert_eq!(v, iterout);
@@ -58,7 +58,7 @@ fn test_iter_rev_cloned_collect() {
 fn test_into_iter_collect() {
     let data = vec![5, 9, 3];
     let iterout = vec![9, 5, 3];
-    let pq = UnsafeLazyHoleResortBinaryHeap::from(data);
+    let pq = LazyHoleResortBinaryHeap::from(data);
 
     let v: Vec<_> = pq.into_iter().collect();
     assert_eq!(v, iterout);
@@ -67,7 +67,7 @@ fn test_into_iter_collect() {
 #[test]
 fn test_into_iter_size_hint() {
     let data = vec![5, 9];
-    let pq = UnsafeLazyHoleResortBinaryHeap::from(data);
+    let pq = LazyHoleResortBinaryHeap::from(data);
 
     let mut it = pq.into_iter();
 
@@ -85,7 +85,7 @@ fn test_into_iter_size_hint() {
 fn test_into_iter_rev_collect() {
     let data = vec![5, 9, 3];
     let iterout = vec![3, 5, 9];
-    let pq = UnsafeLazyHoleResortBinaryHeap::from(data);
+    let pq = LazyHoleResortBinaryHeap::from(data);
 
     let v: Vec<_> = pq.into_iter().rev().collect();
     assert_eq!(v, iterout);
@@ -93,7 +93,7 @@ fn test_into_iter_rev_collect() {
 
 #[test]
 fn test_into_iter_sorted_collect() {
-    let heap = UnsafeLazyHoleResortBinaryHeap::from(vec![2, 4, 6, 2, 1, 8, 10, 3, 5, 7, 0, 9, 1]);
+    let heap = LazyHoleResortBinaryHeap::from(vec![2, 4, 6, 2, 1, 8, 10, 3, 5, 7, 0, 9, 1]);
     let it = heap.into_iter_sorted();
     let sorted = it.collect::<Vec<_>>();
     assert_eq!(sorted, vec![10, 9, 8, 7, 6, 5, 4, 3, 2, 2, 1, 1, 0]);
@@ -101,7 +101,7 @@ fn test_into_iter_sorted_collect() {
 
 #[test]
 fn test_drain_sorted_collect() {
-    let mut heap = UnsafeLazyHoleResortBinaryHeap::from(vec![2, 4, 6, 2, 1, 8, 10, 3, 5, 7, 0, 9, 1]);
+    let mut heap = LazyHoleResortBinaryHeap::from(vec![2, 4, 6, 2, 1, 8, 10, 3, 5, 7, 0, 9, 1]);
     let it = heap.drain_sorted();
     let sorted = it.collect::<Vec<_>>();
     assert_eq!(sorted, vec![10, 9, 8, 7, 6, 5, 4, 3, 2, 2, 1, 1, 0]);
@@ -123,7 +123,7 @@ fn check_exact_size_iterator<I: ExactSizeIterator>(len: usize, it: I) {
 
 #[test]
 fn test_exact_size_iterator() {
-    let heap = UnsafeLazyHoleResortBinaryHeap::from(vec![2, 4, 6, 2, 1, 8, 10, 3, 5, 7, 0, 9, 1]);
+    let heap = LazyHoleResortBinaryHeap::from(vec![2, 4, 6, 2, 1, 8, 10, 3, 5, 7, 0, 9, 1]);
     check_exact_size_iterator(heap.len(), heap.iter());
     check_exact_size_iterator(heap.len(), heap.clone().into_iter());
     check_exact_size_iterator(heap.len(), heap.clone().into_iter_sorted());
@@ -145,7 +145,7 @@ fn check_trusted_len<I: TrustedLen>(len: usize, it: I) {
 
 #[test]
 fn test_trusted_len() {
-    let heap = UnsafeLazyHoleResortBinaryHeap::from(vec![2, 4, 6, 2, 1, 8, 10, 3, 5, 7, 0, 9, 1]);
+    let heap = LazyHoleResortBinaryHeap::from(vec![2, 4, 6, 2, 1, 8, 10, 3, 5, 7, 0, 9, 1]);
     check_trusted_len(heap.len(), heap.clone().into_iter_sorted());
     check_trusted_len(heap.len(), heap.clone().drain_sorted());
 }
@@ -155,7 +155,7 @@ fn test_peek_and_pop() {
     let data = vec![2, 4, 6, 2, 1, 8, 10, 3, 5, 7, 0, 9, 1];
     let mut sorted = data.clone();
     sorted.sort();
-    let mut heap = UnsafeLazyHoleResortBinaryHeap::from(data);
+    let mut heap = LazyHoleResortBinaryHeap::from(data);
     while !heap.is_empty() {
         assert_eq!(heap.peek().unwrap(), sorted.last().unwrap());
         assert_eq!(heap.pop().unwrap(), sorted.pop().unwrap());
@@ -167,7 +167,7 @@ fn test_pop_if() {
     let data = vec![9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
     let mut sorted = data.clone();
     sorted.sort();
-    let mut heap = UnsafeLazyHoleResortBinaryHeap::from(data);
+    let mut heap = LazyHoleResortBinaryHeap::from(data);
     while let Some(popped) = heap.pop_if(|x| *x > 2) {
         assert_eq!(popped, sorted.pop().unwrap());
     }
@@ -177,7 +177,7 @@ fn test_pop_if() {
 #[test]
 fn test_peek_mut() {
     let data = vec![2, 4, 6, 2, 1, 8, 10, 3, 5, 7, 0, 9, 1];
-    let mut heap = UnsafeLazyHoleResortBinaryHeap::from(data);
+    let mut heap = LazyHoleResortBinaryHeap::from(data);
     assert_eq!(heap.peek(), Some(&10));
     {
         let mut top = heap.peek_mut().unwrap();
@@ -186,14 +186,14 @@ fn test_peek_mut() {
     assert_eq!(heap.peek(), Some(&9));
 }
 
-// UnsafeLazyHoleResortBinaryHeap KEEPS the forget guarantee (unlike safe_opt/safe_but_for_index): a
+// LazyHoleResortBinaryHeap KEEPS the forget guarantee (unlike safe_opt/safe_but_for_index): a
 // forgotten mutated guard loses no data, and the next operation (here `into_sorted_vec`)
 // reconciles the dirty root via `clear_possibly_dirty_root`. So this test PASSES — that is the
 // whole point of the lazy-reconcile design. NOT #[ignore]d here.
 #[test]
 fn test_peek_mut_leek() {
     let data = vec![4, 2, 7];
-    let mut heap = UnsafeLazyHoleResortBinaryHeap::from(data);
+    let mut heap = LazyHoleResortBinaryHeap::from(data);
     let mut max = heap.peek_mut().unwrap();
     *max = -1;
 
@@ -208,19 +208,19 @@ fn test_peek_mut_leek() {
 #[test]
 fn test_peek_mut_pop() {
     let data = vec![2, 4, 6, 2, 1, 8, 10, 3, 5, 7, 0, 9, 1];
-    let mut heap = UnsafeLazyHoleResortBinaryHeap::from(data);
+    let mut heap = LazyHoleResortBinaryHeap::from(data);
     assert_eq!(heap.peek(), Some(&10));
     {
         let mut top = heap.peek_mut().unwrap();
         *top -= 2;
-        assert_eq!(UnsafeLazyHoleResortPeekMut::pop(top), 8);
+        assert_eq!(LazyHoleResortPeekMut::pop(top), 8);
     }
     assert_eq!(heap.peek(), Some(&9));
 }
 
 #[test]
 fn test_push() {
-    let mut heap = UnsafeLazyHoleResortBinaryHeap::from(vec![2, 4, 9]);
+    let mut heap = LazyHoleResortBinaryHeap::from(vec![2, 4, 9]);
     assert_eq!(heap.len(), 3);
     assert!(*heap.peek().unwrap() == 9);
     heap.push(11);
@@ -242,7 +242,7 @@ fn test_push() {
 
 #[test]
 fn test_push_unique() {
-    let mut heap = UnsafeLazyHoleResortBinaryHeap::<Box<_>>::from(vec![Box::new(2), Box::new(4), Box::new(9)]);
+    let mut heap = LazyHoleResortBinaryHeap::<Box<_>>::from(vec![Box::new(2), Box::new(4), Box::new(9)]);
     assert_eq!(heap.len(), 3);
     assert!(**heap.peek().unwrap() == 9);
     heap.push(Box::new(11));
@@ -263,7 +263,7 @@ fn test_push_unique() {
 }
 
 fn check_to_vec(mut data: Vec<i32>) {
-    let heap = UnsafeLazyHoleResortBinaryHeap::from(data.clone());
+    let heap = LazyHoleResortBinaryHeap::from(data.clone());
     let mut v = heap.clone().into_vec();
     v.sort();
     data.sort();
@@ -297,7 +297,7 @@ fn test_to_vec() {
 fn test_in_place_iterator_specialization() {
     let src: Vec<usize> = vec![1, 2, 3];
     let src_ptr = src.as_ptr();
-    let heap: UnsafeLazyHoleResortBinaryHeap<_> = src.into_iter().map(std::convert::identity).collect();
+    let heap: LazyHoleResortBinaryHeap<_> = src.into_iter().map(std::convert::identity).collect();
     let heap_ptr = heap.iter().next().unwrap() as *const usize;
     assert_eq!(src_ptr, heap_ptr);
     let sink: Vec<_> = heap.into_iter().map(std::convert::identity).collect();
@@ -307,19 +307,19 @@ fn test_in_place_iterator_specialization() {
 
 #[test]
 fn test_empty_pop() {
-    let mut heap = UnsafeLazyHoleResortBinaryHeap::<i32>::new();
+    let mut heap = LazyHoleResortBinaryHeap::<i32>::new();
     assert!(heap.pop().is_none());
 }
 
 #[test]
 fn test_empty_peek() {
-    let empty = UnsafeLazyHoleResortBinaryHeap::<i32>::new();
+    let empty = LazyHoleResortBinaryHeap::<i32>::new();
     assert!(empty.peek().is_none());
 }
 
 #[test]
 fn test_empty_peek_mut() {
-    let mut empty = UnsafeLazyHoleResortBinaryHeap::<i32>::new();
+    let mut empty = LazyHoleResortBinaryHeap::<i32>::new();
     assert!(empty.peek_mut().is_none());
 }
 
@@ -327,7 +327,7 @@ fn test_empty_peek_mut() {
 fn test_from_iter() {
     let xs = vec![9, 8, 7, 6, 5, 4, 3, 2, 1];
 
-    let mut q: UnsafeLazyHoleResortBinaryHeap<_> = xs.iter().rev().cloned().collect();
+    let mut q: LazyHoleResortBinaryHeap<_> = xs.iter().rev().cloned().collect();
 
     for &x in &xs {
         assert_eq!(q.pop().unwrap(), x);
@@ -336,7 +336,7 @@ fn test_from_iter() {
 
 #[test]
 fn test_drain() {
-    let mut q: UnsafeLazyHoleResortBinaryHeap<_> = [9, 8, 7, 6, 5, 4, 3, 2, 1].iter().cloned().collect();
+    let mut q: LazyHoleResortBinaryHeap<_> = [9, 8, 7, 6, 5, 4, 3, 2, 1].iter().cloned().collect();
 
     assert_eq!(q.drain().take(5).count(), 5);
 
@@ -345,7 +345,7 @@ fn test_drain() {
 
 #[test]
 fn test_drain_sorted() {
-    let mut q: UnsafeLazyHoleResortBinaryHeap<_> = [9, 8, 7, 6, 5, 4, 3, 2, 1].iter().cloned().collect();
+    let mut q: LazyHoleResortBinaryHeap<_> = [9, 8, 7, 6, 5, 4, 3, 2, 1].iter().cloned().collect();
 
     assert_eq!(q.drain_sorted().take(5).collect::<Vec<_>>(), vec![9, 8, 7, 6, 5]);
 
@@ -361,7 +361,7 @@ fn test_drain_sorted_leak() {
     let d3 = CrashTestDummy::new(3);
     let d4 = CrashTestDummy::new(4);
     let d5 = CrashTestDummy::new(5);
-    let mut q = UnsafeLazyHoleResortBinaryHeap::from(vec![
+    let mut q = LazyHoleResortBinaryHeap::from(vec![
         d0.spawn(Panic::Never),
         d1.spawn(Panic::Never),
         d2.spawn(Panic::Never),
@@ -387,7 +387,7 @@ fn test_drain_forget() {
     let b = CrashTestDummy::new(1);
     let c = CrashTestDummy::new(2);
     let mut q =
-        UnsafeLazyHoleResortBinaryHeap::from(vec![a.spawn(Panic::Never), b.spawn(Panic::Never), c.spawn(Panic::Never)]);
+        LazyHoleResortBinaryHeap::from(vec![a.spawn(Panic::Never), b.spawn(Panic::Never), c.spawn(Panic::Never)]);
 
     catch_unwind(AssertUnwindSafe(|| {
         let mut it = q.drain();
@@ -412,7 +412,7 @@ fn test_drain_sorted_forget() {
     let b = CrashTestDummy::new(1);
     let c = CrashTestDummy::new(2);
     let mut q =
-        UnsafeLazyHoleResortBinaryHeap::from(vec![a.spawn(Panic::Never), b.spawn(Panic::Never), c.spawn(Panic::Never)]);
+        LazyHoleResortBinaryHeap::from(vec![a.spawn(Panic::Never), b.spawn(Panic::Never), c.spawn(Panic::Never)]);
 
     catch_unwind(AssertUnwindSafe(|| {
         let mut it = q.drain_sorted();
@@ -432,7 +432,7 @@ fn test_drain_sorted_forget() {
 
 #[test]
 fn test_extend_ref() {
-    let mut a = UnsafeLazyHoleResortBinaryHeap::new();
+    let mut a = LazyHoleResortBinaryHeap::new();
     a.push(1);
     a.push(2);
 
@@ -441,10 +441,10 @@ fn test_extend_ref() {
     assert_eq!(a.len(), 5);
     assert_eq!(a.into_sorted_vec(), [1, 2, 3, 4, 5]);
 
-    let mut a = UnsafeLazyHoleResortBinaryHeap::new();
+    let mut a = LazyHoleResortBinaryHeap::new();
     a.push(1);
     a.push(2);
-    let mut b = UnsafeLazyHoleResortBinaryHeap::new();
+    let mut b = LazyHoleResortBinaryHeap::new();
     b.push(3);
     b.push(4);
     b.push(5);
@@ -457,8 +457,8 @@ fn test_extend_ref() {
 
 #[test]
 fn test_append() {
-    let mut a = UnsafeLazyHoleResortBinaryHeap::from(vec![-10, 1, 2, 3, 3]);
-    let mut b = UnsafeLazyHoleResortBinaryHeap::from(vec![-20, 5, 43]);
+    let mut a = LazyHoleResortBinaryHeap::from(vec![-10, 1, 2, 3, 3]);
+    let mut b = LazyHoleResortBinaryHeap::from(vec![-20, 5, 43]);
 
     a.append(&mut b);
 
@@ -468,8 +468,8 @@ fn test_append() {
 
 #[test]
 fn test_append_to_empty() {
-    let mut a = UnsafeLazyHoleResortBinaryHeap::new();
-    let mut b = UnsafeLazyHoleResortBinaryHeap::from(vec![-20, 5, 43]);
+    let mut a = LazyHoleResortBinaryHeap::new();
+    let mut b = LazyHoleResortBinaryHeap::from(vec![-20, 5, 43]);
 
     a.append(&mut b);
 
@@ -479,8 +479,8 @@ fn test_append_to_empty() {
 
 #[test]
 fn test_extend_specialization() {
-    let mut a = UnsafeLazyHoleResortBinaryHeap::from(vec![-10, 1, 2, 3, 3]);
-    let b = UnsafeLazyHoleResortBinaryHeap::from(vec![-20, 5, 43]);
+    let mut a = LazyHoleResortBinaryHeap::from(vec![-10, 1, 2, 3, 3]);
+    let b = LazyHoleResortBinaryHeap::from(vec![-20, 5, 43]);
 
     a.extend(b);
 
@@ -489,14 +489,14 @@ fn test_extend_specialization() {
 
 #[allow(dead_code)]
 fn assert_covariance() {
-    fn drain<'new>(d: UnsafeLazyHoleResortDrain<'static, &'static str>) -> UnsafeLazyHoleResortDrain<'new, &'new str> {
+    fn drain<'new>(d: LazyHoleResortDrain<'static, &'static str>) -> LazyHoleResortDrain<'new, &'new str> {
         d
     }
 }
 
 #[test]
 fn test_retain() {
-    let mut a = UnsafeLazyHoleResortBinaryHeap::from(vec![100, 10, 50, 1, 2, 20, 30]);
+    let mut a = LazyHoleResortBinaryHeap::from(vec![100, 10, 50, 1, 2, 20, 30]);
     a.retain(|&x| x != 2);
 
     // Check that 20 moved into 10's place.
@@ -518,7 +518,7 @@ fn test_retain() {
 #[test]
 #[cfg_attr(not(panic = "unwind"), ignore = "test requires unwinding support")]
 fn test_retain_catch_unwind() {
-    let mut heap = UnsafeLazyHoleResortBinaryHeap::from(vec![3, 1, 2]);
+    let mut heap = LazyHoleResortBinaryHeap::from(vec![3, 1, 2]);
 
     // Removes the 3, then unwinds out of retain.
     let _ = catch_unwind(AssertUnwindSafe(|| {
@@ -585,7 +585,7 @@ fn panic_safe() {
             let panic_item = PanicOrd(i, true);
 
             panic_ords.shuffle(&mut rng);
-            let mut heap = UnsafeLazyHoleResortBinaryHeap::from(panic_ords);
+            let mut heap = LazyHoleResortBinaryHeap::from(panic_ords);
             let inner_data;
 
             {
@@ -755,7 +755,7 @@ fn test_resort_after_comparison_panic() {
 
     let src: Vec<i32> = vec![5, 1, 8, 3, 9, 2, 7, 4, 6, 0];
     let mut heap =
-        UnsafeLazyHoleResortBinaryHeap::from(src.iter().map(|&x| PanicOrd(x)).collect::<Vec<_>>());
+        LazyHoleResortBinaryHeap::from(src.iter().map(|&x| PanicOrd(x)).collect::<Vec<_>>());
 
     // Trigger a panic on the 2nd comparison of the next op. Pushing a new maximum makes `sift_up` walk
     // several levels, so the panic lands MID-sift, leaving the order broken (not merely a dirty root).

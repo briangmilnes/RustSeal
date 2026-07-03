@@ -1,14 +1,13 @@
 # BinaryHeap Leakage — forget/panic unsafety in the heap, and the winning fix
 
-*Round r0466 follow-up. Product: `products/rustseal` (`binary_heap`, extracted from
-`alloc::collections::binary_heap`).*
-*Numbers: Divan `compare` (`benches/binary_heap/compare.rs`), fastest of 100 samples, both variants
-interleaved in one process. See `src/binary_heap/README.md` for the full design study.*
+*Interim numbers: Divan `compare` (`benches/binary_heap/compare.rs`), **fastest of 100 samples**,
+both variants interleaved in one process. Run 2026-07-03 on a **non-quiescent** box — to be rewritten
+after a quiescent benchmark. See `src/binary_heap/README.md` for the full design study.*
 
 Unlike `Vec`/`VecDeque` (which compare a faithful `std` baseline against a forget-safe variant), the
 `binary_heap` study compares **the original** (`unsafe_binary_heap`, a faithful `std` extraction)
-against **the winner** (`unsafe_lazy_hole_resort_binary_heap`) — the variant chosen as the production
-heap because it is **strictly more correct than `std`**. This doc is the leakage-framed view of that
+against **the winner** (`lazy_hole_resort_binary_heap`) — the variant chosen as the production heap
+because it is **strictly more correct than `std`**. This doc is the leakage-framed view of that
 comparison.
 
 ## 1. What "BinaryHeap leakage" is
@@ -24,7 +23,7 @@ don't have:
 
 Both are `std`'s *documented* behavior (RFC-1066 territory for the forget half).
 
-## 2. The winner — `unsafe_lazy_hole_resort_binary_heap`
+## 2. The winner — `lazy_hole_resort_binary_heap`
 
 Closes **both** gaps at parity on the common path:
 
@@ -46,34 +45,34 @@ The 6 `alloctests/benches/binary_heap.rs` workloads. `ratio = winner ÷ original
 
 | statistic | value | what it means |
 |-----------|------:|---------------|
-| unweighted mean ratio | 1.118 | per-bench average |
-| median ratio | 1.053 | typical bench near parity |
-| geometric mean ratio | 1.095 | outlier-robust "typical factor" |
-| Σ original times | 1.235 ms | one pass over all 6 workloads |
-| Σ winner times | 1.296 ms | same, forget+panic-safe heap |
-| **time-weighted ratio** (Σwinner ÷ Σorig) | **1.050** | aggregate: **~5% slower**, driven by `push` and `find_smallest` |
+| unweighted mean ratio | 1.209 | per-bench average |
+| median ratio | 1.103 | typical bench near parity |
+| geometric mean ratio | 1.175 | outlier-robust "typical factor" |
+| Σ original times | 1.112 ms | one pass over all 6 workloads |
+| Σ winner times | 1.217 ms | same, forget+panic-safe heap |
+| **time-weighted ratio** (Σwinner ÷ Σorig) | **1.094** | aggregate: **~9% slower**, driven by `find_smallest` |
 
 ### Full per-workload table
 
 | # | workload | original | winner (forget+panic safe) | ratio | |
 |--:|----------|---------:|---------------------------:|------:|--|
-| 1 | `find_smallest_1000` | 111.80 µs | 163.00 µs | 1.46 | slower |
-| 2 | `from_vec` | 309.60 µs | 306.40 µs | 0.99 | — |
-| 3 | `into_sorted_vec` | 196.30 µs | 180.40 µs | 0.92 | — |
-| 4 | `peek_mut_deref_mut` | 1.60 ns | 2.19 ns | 1.37 | slower |
-| 5 | `pop` | 161.00 µs | 136.70 µs | 0.85 | faster |
-| 6 | `push` | 456.00 µs | 509.40 µs | 1.12 | — |
+| 1 | `find_smallest_1000` | 108.90 µs | 195.20 µs | 1.79 | slower |
+| 2 | `from_vec` | 320.10 µs | 268.20 µs | 0.84 | faster |
+| 3 | `into_sorted_vec` | 103.50 µs | 112.80 µs | 1.09 | — |
+| 4 | `peek_mut_deref_mut` | 1.21 ns | 1.62 ns | 1.34 | slower |
+| 5 | `pop` | 158.50 µs | 170.80 µs | 1.08 | — |
+| 6 | `push` | 421.40 µs | 470.30 µs | 1.12 | — |
 
 ## 4. Reading the table
 
-- **`find_smallest_1000` 1.46× is the one real cost — and it's the `peek_mut` *mechanism*, not the
+- **`find_smallest_1000` 1.79× is the one real cost — and it's the `peek_mut` *mechanism*, not the
   panic protection.** This is a 99k-iteration loop that takes a `peek_mut` every step; the winner's
   lazy `peek_mut` loads and tests `possibly_mal_formed` on entry and guard-drop, where the original's
   `set_len` `peek_mut` touches no flag. It is the price of never leaking the tail, shared by every
   lazy variant. (`src/binary_heap/README.md` shows the `PanicProtection` contributes ~nothing here.)
-- **`peek_mut_deref_mut` 1.37× is a non-measurement** — a dead-store loop the optimizer deletes; its
+- **`peek_mut_deref_mut` 1.34× is a non-measurement** — a dead-store loop the optimizer deletes; its
   ratio measures the compiler, not the heap (kept only for parity with the upstream bench).
-- **Everything else is parity or faster:** `from_vec` 0.99, `into_sorted_vec` 0.92, `pop` 0.85,
+- **Everything else is parity or faster:** `from_vec` 0.84, `into_sorted_vec` 1.09, `pop` 1.08,
   `push` 1.12. `from_vec`'s panic protection is **provably zero-cost** — the winner's `from_vec`
   compiles to byte-identical machine code to a build with no protection (LLVM deletes the guard,
   since a panic during construction discards the heap; see the README).
@@ -82,7 +81,7 @@ The 6 `alloctests/benches/binary_heap.rs` workloads. `ratio = winner ÷ original
 
 Same overall shape — free on almost everything, one real cost on the safety-critical hot op — but the
 opposite *decision* from `Vec`/`VecDeque`: here the fix was **adopted as production**. The reason is
-where the cost lands: the heap's forget/panic safety costs ~1.5× on `peek_mut`-heavy loops and ~5%
+where the cost lands: the heap's forget/panic safety costs ~1.8× on `peek_mut`-heavy loops and ~9%
 aggregate, but it is confined to `peek_mut` and buys **strictly more correctness than `std`**
 (no data loss on a forgotten mutated `peek_mut`, and self-healing order after a comparison panic).
 Contrast `Vec`/`VecDeque`, whose fix taxes the trivially-cheap construct/clone ops of *every* value —
@@ -92,7 +91,7 @@ collections' `std` design (zero-field leak amplification) can't.
 ## Reproduce
 
 ```
-cd products/rustseal
-scripts/bench.sh --bench compare                                # this table (original vs winner)
-scripts/test.sh  --test unsafe_lazy_hole_resort_binary_heap     # 34/1, incl. resort-after-panic
+cd ~/projects/RustSeal
+scripts/bench.sh --bench compare                       # this table (original vs winner)
+scripts/test.sh  --test lazy_hole_resort_binary_heap   # 34/1, incl. resort-after-panic
 ```

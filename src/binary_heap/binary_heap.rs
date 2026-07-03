@@ -16,7 +16,7 @@
 //!   * `unsafe_nopanic_binary_heap`    — + bare hole sift, no panic guard (isolates swap-vs-hole).
 //!   * `unsafe_lazy_binary_heap`       — lazy-reconcile `peek_mut` (forget-safe, no leak), swap sift.
 //!   * `unsafe_lazy_hole_binary_heap`  — lazy-reconcile `peek_mut` on the panic-safe `Hole` sift.
-//!   * `unsafe_lazy_hole_resort_binary_heap` — `unsafe_lazy_hole` + ORDER recovery after a comparison
+//!   * `lazy_hole_resort_binary_heap` — `unsafe_lazy_hole` + ORDER recovery after a comparison
 //!     panic: a bit-packed `possibly_mal_formed` byte tracks well-formedness, and a comparison panic
 //!     mid-sift (recorded by the sift's panic protection) triggers a full *O*(n) resort on the next op.
 
@@ -27,4 +27,4 @@
 #[path = "losers/unsafe_nopanic_binary_heap.rs"] pub mod unsafe_nopanic_binary_heap;
 #[path = "losers/unsafe_lazy_binary_heap.rs"] pub mod unsafe_lazy_binary_heap;
 #[path = "losers/unsafe_lazy_hole_binary_heap.rs"] pub mod unsafe_lazy_hole_binary_heap;
-#[path = "unsafe_lazy_hole_resort_binary_heap.rs"] pub mod unsafe_lazy_hole_resort_binary_heap;
+#[path = "lazy_hole_resort_binary_heap.rs"] pub mod lazy_hole_resort_binary_heap;

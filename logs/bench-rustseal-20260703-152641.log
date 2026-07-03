@@ -1,0 +1,45 @@
+   Compiling proc-macro2 v1.0.106
+   Compiling rustix v1.1.4
+   Compiling quote v1.0.46
+   Compiling bitflags v2.13.0
+   Compiling linux-raw-sys v0.12.1
+   Compiling unicode-ident v1.0.24
+   Compiling anstyle v1.0.14
+   Compiling clap_lex v1.1.0
+   Compiling libc v0.2.186
+   Compiling rand_core v0.9.5
+   Compiling condtype v1.3.0
+   Compiling regex-lite v0.1.9
+   Compiling syn v2.0.118
+   Compiling cfg-if v1.0.4
+   Compiling rand v0.9.4
+   Compiling terminal_size v0.4.4
+   Compiling rand_xorshift v0.4.0
+   Compiling clap_builder v4.6.0
+   Compiling rustseal v0.1.0 (/home/milnes/projects/RustSeal)
+   Compiling divan-macros v0.1.21
+   Compiling clap v4.6.1
+   Compiling divan v0.1.21
+    Finished `bench` profile [optimized] target(s) in 5.53s
+     Running benches/binary_heap/compare.rs (target/release/deps/compare-1df53e49a5233b3a)
+Timer precision: 33 ns
+compare                                    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ find_smallest_1000                                    │               │               │               │         │
+│  ├─ UnsafeBinaryHeap<u32>                108.9 µs      │ 151.9 µs      │ 117.4 µs      │ 121.6 µs      │ 100     │ 100
+│  ╰─ UnsafeLazyHoleResortBinaryHeap<u32>  195.2 µs      │ 215.6 µs      │ 207.1 µs      │ 206 µs        │ 100     │ 100
+├─ from_vec                                              │               │               │               │         │
+│  ├─ UnsafeBinaryHeap<u32>                320.1 µs      │ 364.4 µs      │ 331.3 µs      │ 331.8 µs      │ 100     │ 100
+│  ╰─ UnsafeLazyHoleResortBinaryHeap<u32>  268.2 µs      │ 489.8 µs      │ 312.5 µs      │ 315.7 µs      │ 100     │ 100
+├─ into_sorted_vec                                       │               │               │               │         │
+│  ├─ UnsafeBinaryHeap<u32>                103.5 µs      │ 251.2 µs      │ 174.3 µs      │ 171.2 µs      │ 100     │ 100
+│  ╰─ UnsafeLazyHoleResortBinaryHeap<u32>  112.8 µs      │ 258 µs        │ 228.9 µs      │ 204 µs        │ 100     │ 100
+├─ peek_mut_deref_mut                                    │               │               │               │         │
+│  ├─ UnsafeBinaryHeap<u32>                1.208 ns      │ 2.577 ns      │ 1.24 ns       │ 1.298 ns      │ 100     │ 204800
+│  ╰─ UnsafeLazyHoleResortBinaryHeap<u32>  1.616 ns      │ 10.08 ns      │ 1.717 ns      │ 1.9 ns        │ 100     │ 51200
+├─ pop                                                   │               │               │               │         │
+│  ├─ UnsafeBinaryHeap<u32>                158.5 µs      │ 251 µs        │ 183.1 µs      │ 191.4 µs      │ 100     │ 100
+│  ╰─ UnsafeLazyHoleResortBinaryHeap<u32>  170.8 µs      │ 404.4 µs      │ 216.6 µs      │ 225.5 µs      │ 100     │ 100
+╰─ push                                                  │               │               │               │         │
+   ├─ UnsafeBinaryHeap<u32>                421.4 µs      │ 733.8 µs      │ 488.4 µs      │ 492.1 µs      │ 100     │ 100
+   ╰─ UnsafeLazyHoleResortBinaryHeap<u32>  470.3 µs      │ 516.9 µs      │ 482.8 µs      │ 483.2 µs      │ 100     │ 100
+

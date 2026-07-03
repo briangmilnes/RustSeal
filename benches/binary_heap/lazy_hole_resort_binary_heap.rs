@@ -1,6 +1,6 @@
 // Copyright (C) 2026 Brian G. Milnes <briangmilnes@gmail.com>, All Rights Reserved.
 
-//! Benchmarks for `UnsafeLazyHoleResortBinaryHeap`, a plain copy of the rust-libs 1.96.0 binary_heap
+//! Benchmarks for `LazyHoleResortBinaryHeap`, a plain copy of the rust-libs 1.96.0 binary_heap
 //! benchmarks (alloctests/benches/binary_heap.rs) with the type name changed. The seeded
 //! `bench_rng` is inlined. `feature(test)` is unlocked via RUSTC_BOOTSTRAP=1 (.cargo/config.toml).
 
@@ -11,7 +11,7 @@ extern crate test;
 use rand::seq::SliceRandom;
 use test::{black_box, Bencher};
 
-use rustseal::binary_heap::unsafe_lazy_hole_resort_binary_heap::UnsafeLazyHoleResortBinaryHeap;
+use rustseal::binary_heap::lazy_hole_resort_binary_heap::LazyHoleResortBinaryHeap;
 
 /// A `rand::Rng` seeded with a consistent seed, to avoid nondeterminism in results.
 fn bench_rng() -> rand_xorshift::XorShiftRng {
@@ -27,7 +27,7 @@ fn bench_find_smallest_1000(b: &mut Bencher) {
 
     b.iter(|| {
         let mut iter = vec.iter().copied();
-        let mut heap: UnsafeLazyHoleResortBinaryHeap<_> = iter.by_ref().take(1000).collect();
+        let mut heap: LazyHoleResortBinaryHeap<_> = iter.by_ref().take(1000).collect();
 
         for x in iter {
             let mut max = heap.peek_mut().unwrap();
@@ -44,7 +44,7 @@ fn bench_find_smallest_1000(b: &mut Bencher) {
 
 #[bench]
 fn bench_peek_mut_deref_mut(b: &mut Bencher) {
-    let mut bheap = UnsafeLazyHoleResortBinaryHeap::from(vec![42]);
+    let mut bheap = LazyHoleResortBinaryHeap::from(vec![42]);
     let vec: Vec<u32> = (0..1_000_000).collect();
 
     b.iter(|| {
@@ -67,19 +67,19 @@ fn bench_from_vec(b: &mut Bencher) {
     let mut vec: Vec<u32> = (0..100_000).collect();
     vec.shuffle(&mut rng);
 
-    b.iter(|| UnsafeLazyHoleResortBinaryHeap::from(vec.clone()))
+    b.iter(|| LazyHoleResortBinaryHeap::from(vec.clone()))
 }
 
 #[bench]
 fn bench_into_sorted_vec(b: &mut Bencher) {
-    let bheap: UnsafeLazyHoleResortBinaryHeap<i32> = (0..10_000).collect();
+    let bheap: LazyHoleResortBinaryHeap<i32> = (0..10_000).collect();
 
     b.iter(|| bheap.clone().into_sorted_vec())
 }
 
 #[bench]
 fn bench_push(b: &mut Bencher) {
-    let mut bheap = UnsafeLazyHoleResortBinaryHeap::with_capacity(50_000);
+    let mut bheap = LazyHoleResortBinaryHeap::with_capacity(50_000);
     let mut rng = bench_rng();
     let mut vec: Vec<u32> = (0..50_000).collect();
     vec.shuffle(&mut rng);
@@ -95,7 +95,7 @@ fn bench_push(b: &mut Bencher) {
 
 #[bench]
 fn bench_pop(b: &mut Bencher) {
-    let mut bheap = UnsafeLazyHoleResortBinaryHeap::with_capacity(10_000);
+    let mut bheap = LazyHoleResortBinaryHeap::with_capacity(10_000);
 
     b.iter(|| {
         bheap.extend((0..10_000).rev());

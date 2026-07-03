@@ -1,6 +1,6 @@
 // Copyright (C) 2026 Brian G. Milnes <briangmilnes@gmail.com>, All Rights Reserved.
 
-//! UnsafeLazyHoleResortBinaryHeap — `unsafe_lazy_hole_binary_heap` plus order recovery after a
+//! LazyHoleResortBinaryHeap — `unsafe_lazy_hole_binary_heap` plus order recovery after a
 //! comparison panic. The winner is memory-safe on a `T: Ord` panic (the `Hole` refills its slot,
 //! no data loss) but silently leaves the heap order broken — nothing records it, so the next
 //! operation never repairs it. This variant tracks the heap's **well-formedness** (the max-heap
@@ -37,7 +37,7 @@ const POSSIBLY_UNSORTED: u8 = 0b10; //   a comparison panicked mid-sift: a key a
 
 /// A priority queue implemented with a binary (max-)heap — unchecked, lazy repair, with order
 /// recovery after a comparison panic.
-pub struct UnsafeLazyHoleResortBinaryHeap<T, A: Allocator = Global> {
+pub struct LazyHoleResortBinaryHeap<T, A: Allocator = Global> {
     data: Vec<T, A>,
     // Bit-packed well-formedness defects (see `POSSIBLY_DIRTY_ROOT` / `POSSIBLY_UNSORTED` above).
     // `0` == well-formed (the common case). Repaired back to `0` by `repair_possibly_mal_formed`
@@ -45,26 +45,26 @@ pub struct UnsafeLazyHoleResortBinaryHeap<T, A: Allocator = Global> {
     possibly_mal_formed: u8,
 }
 
-/// Mutable-greatest-element guard for `UnsafeLazyHoleResortBinaryHeap`. Created by
-/// [`UnsafeLazyHoleResortBinaryHeap::peek_mut`].
+/// Mutable-greatest-element guard for `LazyHoleResortBinaryHeap`. Created by
+/// [`LazyHoleResortBinaryHeap::peek_mut`].
 ///
 /// The greatest element stays in place at `data[0]`; the guard derefs to it. `deref_mut`
 /// only ORs `POSSIBLY_DIRTY_ROOT` into `possibly_mal_formed` (*O*(1), nothing moved). The re-sift
 /// is deferred: `Drop` runs `repair_possibly_mal_formed` (the fast path), and if the guard is
 /// FORGOTTEN the bit survives and the heap's next `&mut` operation repairs it — so a forgotten
 /// mutated guard loses nothing and leaks nothing.
-pub struct UnsafeLazyHoleResortPeekMut<'a, T: 'a + Ord, A: Allocator = Global> {
-    heap: &'a mut UnsafeLazyHoleResortBinaryHeap<T, A>,
+pub struct LazyHoleResortPeekMut<'a, T: 'a + Ord, A: Allocator = Global> {
+    heap: &'a mut LazyHoleResortBinaryHeap<T, A>,
 }
 
-impl<T: Ord + fmt::Debug, A: Allocator> fmt::Debug for UnsafeLazyHoleResortPeekMut<'_, T, A> {
+impl<T: Ord + fmt::Debug, A: Allocator> fmt::Debug for LazyHoleResortPeekMut<'_, T, A> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // SAFETY: a UnsafeLazyHoleResortPeekMut is only created for a non-empty heap.
-        f.debug_tuple("UnsafeLazyHoleResortPeekMut").field(unsafe { self.heap.data.get_unchecked(0) }).finish()
+        // SAFETY: a LazyHoleResortPeekMut is only created for a non-empty heap.
+        f.debug_tuple("LazyHoleResortPeekMut").field(unsafe { self.heap.data.get_unchecked(0) }).finish()
     }
 }
 
-impl<T: Ord, A: Allocator> Drop for UnsafeLazyHoleResortPeekMut<'_, T, A> {
+impl<T: Ord, A: Allocator> Drop for LazyHoleResortPeekMut<'_, T, A> {
     fn drop(&mut self) {
         // Fast path: repair the (possibly) dirtied root now. If the guard is forgotten
         // instead, this never runs — but the flag survives and the heap self-heals on next use.
@@ -72,7 +72,7 @@ impl<T: Ord, A: Allocator> Drop for UnsafeLazyHoleResortPeekMut<'_, T, A> {
     }
 }
 
-impl<T: Ord, A: Allocator> Deref for UnsafeLazyHoleResortPeekMut<'_, T, A> {
+impl<T: Ord, A: Allocator> Deref for LazyHoleResortPeekMut<'_, T, A> {
     type Target = T;
     fn deref(&self) -> &T {
         debug_assert!(!self.heap.is_empty());
@@ -81,7 +81,7 @@ impl<T: Ord, A: Allocator> Deref for UnsafeLazyHoleResortPeekMut<'_, T, A> {
     }
 }
 
-impl<T: Ord, A: Allocator> DerefMut for UnsafeLazyHoleResortPeekMut<'_, T, A> {
+impl<T: Ord, A: Allocator> DerefMut for LazyHoleResortPeekMut<'_, T, A> {
     fn deref_mut(&mut self) -> &mut T {
         debug_assert!(!self.heap.is_empty());
         // O(1): mark the root as possibly-dirty and hand out `&mut data[0]`. The repair is
@@ -98,10 +98,10 @@ impl<T: Ord, A: Allocator> DerefMut for UnsafeLazyHoleResortPeekMut<'_, T, A> {
     }
 }
 
-impl<'a, T: Ord, A: Allocator> UnsafeLazyHoleResortPeekMut<'a, T, A> {
+impl<'a, T: Ord, A: Allocator> LazyHoleResortPeekMut<'a, T, A> {
     /// Sifts the current element to its new position. Afterwards refers to the new
     /// element. Returns whether the maximum changed.
-    #[must_use = "is equivalent to dropping and getting a new UnsafeLazyHoleResortPeekMut except for return information"]
+    #[must_use = "is equivalent to dropping and getting a new LazyHoleResortPeekMut except for return information"]
     pub fn refresh(&mut self) -> bool {
         // Sift the (possibly mutated) root down now; it changed iff it moved off index 0.
         let moved = self.heap.sift_down(0) != 0;
@@ -112,7 +112,7 @@ impl<'a, T: Ord, A: Allocator> UnsafeLazyHoleResortPeekMut<'a, T, A> {
     }
 
     /// Removes the peeked value from the heap and returns it.
-    pub fn pop(this: UnsafeLazyHoleResortPeekMut<'a, T, A>) -> T {
+    pub fn pop(this: LazyHoleResortPeekMut<'a, T, A>) -> T {
         // Remove the (possibly mutated) root and re-heapify the rest; the root is gone, so
         // clear the flag (Drop then no-ops).
         this.heap.possibly_mal_formed &= !POSSIBLY_DIRTY_ROOT;
@@ -124,11 +124,11 @@ impl<'a, T: Ord, A: Allocator> UnsafeLazyHoleResortPeekMut<'a, T, A> {
     }
 }
 
-impl<T: Clone, A: Allocator + Clone> Clone for UnsafeLazyHoleResortBinaryHeap<T, A> {
+impl<T: Clone, A: Allocator + Clone> Clone for LazyHoleResortBinaryHeap<T, A> {
     fn clone(&self) -> Self {
         // Preserve the flag: cloning a dirty heap must yield a dirty clone, not a "clean" heap
         // with an unsorted root.
-        UnsafeLazyHoleResortBinaryHeap { data: self.data.clone(), possibly_mal_formed: self.possibly_mal_formed }
+        LazyHoleResortBinaryHeap { data: self.data.clone(), possibly_mal_formed: self.possibly_mal_formed }
     }
 
     fn clone_from(&mut self, source: &Self) {
@@ -137,15 +137,15 @@ impl<T: Clone, A: Allocator + Clone> Clone for UnsafeLazyHoleResortBinaryHeap<T,
     }
 }
 
-impl<T> Default for UnsafeLazyHoleResortBinaryHeap<T> {
-    /// Creates an empty `UnsafeLazyHoleResortBinaryHeap<T>`.
+impl<T> Default for LazyHoleResortBinaryHeap<T> {
+    /// Creates an empty `LazyHoleResortBinaryHeap<T>`.
     #[inline]
-    fn default() -> UnsafeLazyHoleResortBinaryHeap<T> {
-        UnsafeLazyHoleResortBinaryHeap::new()
+    fn default() -> LazyHoleResortBinaryHeap<T> {
+        LazyHoleResortBinaryHeap::new()
     }
 }
 
-impl<T: fmt::Debug, A: Allocator> fmt::Debug for UnsafeLazyHoleResortBinaryHeap<T, A> {
+impl<T: fmt::Debug, A: Allocator> fmt::Debug for LazyHoleResortBinaryHeap<T, A> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.iter()).finish()
     }
@@ -153,55 +153,55 @@ impl<T: fmt::Debug, A: Allocator> fmt::Debug for UnsafeLazyHoleResortBinaryHeap<
 
 /// Drop guard that repairs the heap tail when an in-place mutation (extend / retain)
 /// finishes or unwinds.
-struct UnsafeLazyHoleResortRebuildOnDrop<'a, T: Ord, A: Allocator = Global> {
-    heap: &'a mut UnsafeLazyHoleResortBinaryHeap<T, A>,
+struct LazyHoleResortRebuildOnDrop<'a, T: Ord, A: Allocator = Global> {
+    heap: &'a mut LazyHoleResortBinaryHeap<T, A>,
     rebuild_from: usize,
 }
 
-impl<T: Ord, A: Allocator> Drop for UnsafeLazyHoleResortRebuildOnDrop<'_, T, A> {
+impl<T: Ord, A: Allocator> Drop for LazyHoleResortRebuildOnDrop<'_, T, A> {
     fn drop(&mut self) {
         self.heap.rebuild_tail(self.rebuild_from);
     }
 }
 
-impl<T> UnsafeLazyHoleResortBinaryHeap<T> {
-    /// Creates an empty `UnsafeLazyHoleResortBinaryHeap` as a max-heap.
+impl<T> LazyHoleResortBinaryHeap<T> {
+    /// Creates an empty `LazyHoleResortBinaryHeap` as a max-heap.
     #[must_use]
-    pub const fn new() -> UnsafeLazyHoleResortBinaryHeap<T> {
-        UnsafeLazyHoleResortBinaryHeap { data: Vec::new(), possibly_mal_formed: 0 }
+    pub const fn new() -> LazyHoleResortBinaryHeap<T> {
+        LazyHoleResortBinaryHeap { data: Vec::new(), possibly_mal_formed: 0 }
     }
 
-    /// Creates an empty `UnsafeLazyHoleResortBinaryHeap` with at least the specified capacity.
+    /// Creates an empty `LazyHoleResortBinaryHeap` with at least the specified capacity.
     #[must_use]
-    pub fn with_capacity(capacity: usize) -> UnsafeLazyHoleResortBinaryHeap<T> {
-        UnsafeLazyHoleResortBinaryHeap { data: Vec::with_capacity(capacity), possibly_mal_formed: 0 }
+    pub fn with_capacity(capacity: usize) -> LazyHoleResortBinaryHeap<T> {
+        LazyHoleResortBinaryHeap { data: Vec::with_capacity(capacity), possibly_mal_formed: 0 }
     }
 }
 
-impl<T, A: Allocator> UnsafeLazyHoleResortBinaryHeap<T, A> {
-    /// Creates an empty `UnsafeLazyHoleResortBinaryHeap` as a max-heap, using `A` as allocator.
+impl<T, A: Allocator> LazyHoleResortBinaryHeap<T, A> {
+    /// Creates an empty `LazyHoleResortBinaryHeap` as a max-heap, using `A` as allocator.
     #[must_use]
-    pub const fn new_in(alloc: A) -> UnsafeLazyHoleResortBinaryHeap<T, A> {
-        UnsafeLazyHoleResortBinaryHeap { data: Vec::new_in(alloc), possibly_mal_formed: 0 }
+    pub const fn new_in(alloc: A) -> LazyHoleResortBinaryHeap<T, A> {
+        LazyHoleResortBinaryHeap { data: Vec::new_in(alloc), possibly_mal_formed: 0 }
     }
 
-    /// Creates an empty `UnsafeLazyHoleResortBinaryHeap` with at least the specified capacity, using `A`.
+    /// Creates an empty `LazyHoleResortBinaryHeap` with at least the specified capacity, using `A`.
     #[must_use]
-    pub fn with_capacity_in(capacity: usize, alloc: A) -> UnsafeLazyHoleResortBinaryHeap<T, A> {
-        UnsafeLazyHoleResortBinaryHeap { data: Vec::with_capacity_in(capacity, alloc), possibly_mal_formed: 0 }
+    pub fn with_capacity_in(capacity: usize, alloc: A) -> LazyHoleResortBinaryHeap<T, A> {
+        LazyHoleResortBinaryHeap { data: Vec::with_capacity_in(capacity, alloc), possibly_mal_formed: 0 }
     }
 
-    /// Creates a `UnsafeLazyHoleResortBinaryHeap` from the supplied `vec` without rebuilding it.
+    /// Creates a `LazyHoleResortBinaryHeap` from the supplied `vec` without rebuilding it.
     ///
     /// Logically `vec` must already be a max-heap; unlike the unsafe heap this is a SAFE
     /// fn (a non-heap input only produces wrong results, never undefined behavior).
     #[must_use]
-    pub fn from_raw_vec(vec: Vec<T, A>) -> UnsafeLazyHoleResortBinaryHeap<T, A> {
-        UnsafeLazyHoleResortBinaryHeap { data: vec, possibly_mal_formed: 0 }
+    pub fn from_raw_vec(vec: Vec<T, A>) -> LazyHoleResortBinaryHeap<T, A> {
+        LazyHoleResortBinaryHeap { data: vec, possibly_mal_formed: 0 }
     }
 }
 
-impl<T: Ord, A: Allocator> UnsafeLazyHoleResortBinaryHeap<T, A> {
+impl<T: Ord, A: Allocator> LazyHoleResortBinaryHeap<T, A> {
     /// Returns the greatest item, or `None` if empty.
     ///
     /// Note: unlike std, `peek` here requires `Ord`, because the max is not always at `data[0]`:
@@ -237,12 +237,12 @@ impl<T: Ord, A: Allocator> UnsafeLazyHoleResortBinaryHeap<T, A> {
     }
 
     /// Returns a mutable reference to the greatest item, or `None` if empty.
-    pub fn peek_mut(&mut self) -> Option<UnsafeLazyHoleResortPeekMut<'_, T, A>> {
+    pub fn peek_mut(&mut self) -> Option<LazyHoleResortPeekMut<'_, T, A>> {
         self.repair_possibly_mal_formed(); // heal a prior forgotten guard before lending again
         if self.is_empty() {
             None
         } else {
-            Some(UnsafeLazyHoleResortPeekMut { heap: self })
+            Some(LazyHoleResortPeekMut { heap: self })
         }
     }
 
@@ -450,8 +450,8 @@ impl<T: Ord, A: Allocator> UnsafeLazyHoleResortBinaryHeap<T, A> {
 
     /// Clears the heap, returning an iterator over the removed elements in heap order.
     #[inline]
-    pub fn drain_sorted(&mut self) -> UnsafeLazyHoleResortDrainSorted<'_, T, A> {
-        UnsafeLazyHoleResortDrainSorted { inner: self }
+    pub fn drain_sorted(&mut self) -> LazyHoleResortDrainSorted<'_, T, A> {
+        LazyHoleResortDrainSorted { inner: self }
     }
 
     /// Retains only the elements specified by the predicate, in unspecified order.
@@ -460,7 +460,7 @@ impl<T: Ord, A: Allocator> UnsafeLazyHoleResortBinaryHeap<T, A> {
         F: FnMut(&T) -> bool,
     {
         self.repair_possibly_mal_formed();
-        let mut guard = UnsafeLazyHoleResortRebuildOnDrop { rebuild_from: self.len(), heap: self };
+        let mut guard = LazyHoleResortRebuildOnDrop { rebuild_from: self.len(), heap: self };
         let mut i = 0;
 
         guard.heap.data.retain(|e| {
@@ -474,16 +474,16 @@ impl<T: Ord, A: Allocator> UnsafeLazyHoleResortBinaryHeap<T, A> {
     }
 }
 
-impl<T, A: Allocator> UnsafeLazyHoleResortBinaryHeap<T, A> {
+impl<T, A: Allocator> LazyHoleResortBinaryHeap<T, A> {
     /// Returns an iterator visiting all values in the underlying vector, in arbitrary
     /// order.
-    pub fn iter(&self) -> UnsafeLazyHoleResortIter<'_, T> {
-        UnsafeLazyHoleResortIter { iter: self.data.iter() }
+    pub fn iter(&self) -> LazyHoleResortIter<'_, T> {
+        LazyHoleResortIter { iter: self.data.iter() }
     }
 
     /// Returns an iterator which retrieves elements in heap order. Consumes the heap.
-    pub fn into_iter_sorted(self) -> UnsafeLazyHoleResortIntoIterSorted<T, A> {
-        UnsafeLazyHoleResortIntoIterSorted { inner: self }
+    pub fn into_iter_sorted(self) -> LazyHoleResortIntoIterSorted<T, A> {
+        LazyHoleResortIntoIterSorted { inner: self }
     }
 
     /// Returns the number of elements the heap can hold without reallocating.
@@ -565,12 +565,12 @@ impl<T, A: Allocator> UnsafeLazyHoleResortBinaryHeap<T, A> {
     /// Clears the heap, returning an iterator over the removed elements in arbitrary
     /// order.
     #[inline]
-    pub fn drain(&mut self) -> UnsafeLazyHoleResortDrain<'_, T, A> {
+    pub fn drain(&mut self) -> LazyHoleResortDrain<'_, T, A> {
         // The (possibly dirty) root is about to be removed along with everything else; the
         // emptied heap is trivially clean. (No `Ord` here, so just clear the flag — order is
         // irrelevant to a full drain anyway.)
         self.possibly_mal_formed = 0;
-        UnsafeLazyHoleResortDrain { iter: self.data.drain(..) }
+        LazyHoleResortDrain { iter: self.data.drain(..) }
     }
 
     /// Drops all items from the heap.
@@ -665,32 +665,32 @@ impl<T> Drop for Hole<'_, T> {
     }
 }
 
-/// An iterator over the elements of a `UnsafeLazyHoleResortBinaryHeap`.
+/// An iterator over the elements of a `LazyHoleResortBinaryHeap`.
 #[must_use = "iterators are lazy and do nothing unless consumed"]
-pub struct UnsafeLazyHoleResortIter<'a, T: 'a> {
+pub struct LazyHoleResortIter<'a, T: 'a> {
     iter: std::slice::Iter<'a, T>,
 }
 
-impl<T> Default for UnsafeLazyHoleResortIter<'_, T> {
-    /// Creates an empty `UnsafeLazyHoleResortIter`.
+impl<T> Default for LazyHoleResortIter<'_, T> {
+    /// Creates an empty `LazyHoleResortIter`.
     fn default() -> Self {
-        UnsafeLazyHoleResortIter { iter: Default::default() }
+        LazyHoleResortIter { iter: Default::default() }
     }
 }
 
-impl<T: fmt::Debug> fmt::Debug for UnsafeLazyHoleResortIter<'_, T> {
+impl<T: fmt::Debug> fmt::Debug for LazyHoleResortIter<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("UnsafeLazyHoleResortIter").field(&self.iter.as_slice()).finish()
+        f.debug_tuple("LazyHoleResortIter").field(&self.iter.as_slice()).finish()
     }
 }
 
-impl<T> Clone for UnsafeLazyHoleResortIter<'_, T> {
+impl<T> Clone for LazyHoleResortIter<'_, T> {
     fn clone(&self) -> Self {
-        UnsafeLazyHoleResortIter { iter: self.iter.clone() }
+        LazyHoleResortIter { iter: self.iter.clone() }
     }
 }
 
-impl<'a, T> Iterator for UnsafeLazyHoleResortIter<'a, T> {
+impl<'a, T> Iterator for LazyHoleResortIter<'a, T> {
     type Item = &'a T;
 
     #[inline]
@@ -709,41 +709,41 @@ impl<'a, T> Iterator for UnsafeLazyHoleResortIter<'a, T> {
     }
 }
 
-impl<'a, T> DoubleEndedIterator for UnsafeLazyHoleResortIter<'a, T> {
+impl<'a, T> DoubleEndedIterator for LazyHoleResortIter<'a, T> {
     #[inline]
     fn next_back(&mut self) -> Option<&'a T> {
         self.iter.next_back()
     }
 }
 
-impl<T> ExactSizeIterator for UnsafeLazyHoleResortIter<'_, T> {
+impl<T> ExactSizeIterator for LazyHoleResortIter<'_, T> {
     fn is_empty(&self) -> bool {
         self.iter.is_empty()
     }
 }
 
-impl<T> FusedIterator for UnsafeLazyHoleResortIter<'_, T> {}
+impl<T> FusedIterator for LazyHoleResortIter<'_, T> {}
 
-/// An owning iterator over the elements of a `UnsafeLazyHoleResortBinaryHeap`.
+/// An owning iterator over the elements of a `LazyHoleResortBinaryHeap`.
 #[derive(Clone)]
-pub struct UnsafeLazyHoleResortIntoIter<T, A: Allocator = Global> {
+pub struct LazyHoleResortIntoIter<T, A: Allocator = Global> {
     iter: std::vec::IntoIter<T, A>,
 }
 
-impl<T, A: Allocator> UnsafeLazyHoleResortIntoIter<T, A> {
+impl<T, A: Allocator> LazyHoleResortIntoIter<T, A> {
     /// Returns a reference to the underlying allocator.
     pub fn allocator(&self) -> &A {
         self.iter.allocator()
     }
 }
 
-impl<T: fmt::Debug, A: Allocator> fmt::Debug for UnsafeLazyHoleResortIntoIter<T, A> {
+impl<T: fmt::Debug, A: Allocator> fmt::Debug for LazyHoleResortIntoIter<T, A> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("UnsafeLazyHoleResortIntoIter").field(&self.iter.as_slice()).finish()
+        f.debug_tuple("LazyHoleResortIntoIter").field(&self.iter.as_slice()).finish()
     }
 }
 
-impl<T, A: Allocator> Iterator for UnsafeLazyHoleResortIntoIter<T, A> {
+impl<T, A: Allocator> Iterator for LazyHoleResortIntoIter<T, A> {
     type Item = T;
 
     #[inline]
@@ -757,43 +757,43 @@ impl<T, A: Allocator> Iterator for UnsafeLazyHoleResortIntoIter<T, A> {
     }
 }
 
-impl<T, A: Allocator> DoubleEndedIterator for UnsafeLazyHoleResortIntoIter<T, A> {
+impl<T, A: Allocator> DoubleEndedIterator for LazyHoleResortIntoIter<T, A> {
     #[inline]
     fn next_back(&mut self) -> Option<T> {
         self.iter.next_back()
     }
 }
 
-impl<T, A: Allocator> ExactSizeIterator for UnsafeLazyHoleResortIntoIter<T, A> {
+impl<T, A: Allocator> ExactSizeIterator for LazyHoleResortIntoIter<T, A> {
     fn is_empty(&self) -> bool {
         self.iter.is_empty()
     }
 }
 
-impl<T, A: Allocator> FusedIterator for UnsafeLazyHoleResortIntoIter<T, A> {}
+impl<T, A: Allocator> FusedIterator for LazyHoleResortIntoIter<T, A> {}
 
-impl<T> Default for UnsafeLazyHoleResortIntoIter<T> {
-    /// Creates an empty `UnsafeLazyHoleResortIntoIter`.
+impl<T> Default for LazyHoleResortIntoIter<T> {
+    /// Creates an empty `LazyHoleResortIntoIter`.
     fn default() -> Self {
-        UnsafeLazyHoleResortIntoIter { iter: Default::default() }
+        LazyHoleResortIntoIter { iter: Default::default() }
     }
 }
 
 /// An iterator that retrieves elements in heap (sorted) order, consuming the heap.
 #[must_use = "iterators are lazy and do nothing unless consumed"]
 #[derive(Clone, Debug)]
-pub struct UnsafeLazyHoleResortIntoIterSorted<T, A: Allocator = Global> {
-    inner: UnsafeLazyHoleResortBinaryHeap<T, A>,
+pub struct LazyHoleResortIntoIterSorted<T, A: Allocator = Global> {
+    inner: LazyHoleResortBinaryHeap<T, A>,
 }
 
-impl<T, A: Allocator> UnsafeLazyHoleResortIntoIterSorted<T, A> {
+impl<T, A: Allocator> LazyHoleResortIntoIterSorted<T, A> {
     /// Returns a reference to the underlying allocator.
     pub fn allocator(&self) -> &A {
         self.inner.allocator()
     }
 }
 
-impl<T: Ord, A: Allocator> Iterator for UnsafeLazyHoleResortIntoIterSorted<T, A> {
+impl<T: Ord, A: Allocator> Iterator for LazyHoleResortIntoIterSorted<T, A> {
     type Item = T;
 
     #[inline]
@@ -808,9 +808,9 @@ impl<T: Ord, A: Allocator> Iterator for UnsafeLazyHoleResortIntoIterSorted<T, A>
     }
 }
 
-impl<T: Ord, A: Allocator> ExactSizeIterator for UnsafeLazyHoleResortIntoIterSorted<T, A> {}
+impl<T: Ord, A: Allocator> ExactSizeIterator for LazyHoleResortIntoIterSorted<T, A> {}
 
-impl<T: Ord, A: Allocator> FusedIterator for UnsafeLazyHoleResortIntoIterSorted<T, A> {}
+impl<T: Ord, A: Allocator> FusedIterator for LazyHoleResortIntoIterSorted<T, A> {}
 
 // `TrustedLen` is an unsafe PROMISE that `size_hint` is exact: lower == upper == the
 // remaining count, and `next` yields exactly that many items. Length-driven consumers
@@ -820,22 +820,22 @@ impl<T: Ord, A: Allocator> FusedIterator for UnsafeLazyHoleResortIntoIterSorted<
 // `next` is `pop` (one item per heap element) and `size_hint` is `(len, Some(len))`, so
 // the count is exact. This length promise is the ONLY `unsafe` token in the safe heap; it
 // does no memory-unsafe work itself.
-unsafe impl<T: Ord, A: Allocator> TrustedLen for UnsafeLazyHoleResortIntoIterSorted<T, A> {}
+unsafe impl<T: Ord, A: Allocator> TrustedLen for LazyHoleResortIntoIterSorted<T, A> {}
 
-/// A draining iterator over the elements of a `UnsafeLazyHoleResortBinaryHeap`.
+/// A draining iterator over the elements of a `LazyHoleResortBinaryHeap`.
 #[derive(Debug)]
-pub struct UnsafeLazyHoleResortDrain<'a, T: 'a, A: Allocator = Global> {
+pub struct LazyHoleResortDrain<'a, T: 'a, A: Allocator = Global> {
     iter: std::vec::Drain<'a, T, A>,
 }
 
-impl<T, A: Allocator> UnsafeLazyHoleResortDrain<'_, T, A> {
+impl<T, A: Allocator> LazyHoleResortDrain<'_, T, A> {
     /// Returns a reference to the underlying allocator.
     pub fn allocator(&self) -> &A {
         self.iter.allocator()
     }
 }
 
-impl<T, A: Allocator> Iterator for UnsafeLazyHoleResortDrain<'_, T, A> {
+impl<T, A: Allocator> Iterator for LazyHoleResortDrain<'_, T, A> {
     type Item = T;
 
     #[inline]
@@ -849,38 +849,38 @@ impl<T, A: Allocator> Iterator for UnsafeLazyHoleResortDrain<'_, T, A> {
     }
 }
 
-impl<T, A: Allocator> DoubleEndedIterator for UnsafeLazyHoleResortDrain<'_, T, A> {
+impl<T, A: Allocator> DoubleEndedIterator for LazyHoleResortDrain<'_, T, A> {
     #[inline]
     fn next_back(&mut self) -> Option<T> {
         self.iter.next_back()
     }
 }
 
-impl<T, A: Allocator> ExactSizeIterator for UnsafeLazyHoleResortDrain<'_, T, A> {
+impl<T, A: Allocator> ExactSizeIterator for LazyHoleResortDrain<'_, T, A> {
     fn is_empty(&self) -> bool {
         self.iter.is_empty()
     }
 }
 
-impl<T, A: Allocator> FusedIterator for UnsafeLazyHoleResortDrain<'_, T, A> {}
+impl<T, A: Allocator> FusedIterator for LazyHoleResortDrain<'_, T, A> {}
 
-/// A draining iterator over the elements of a `UnsafeLazyHoleResortBinaryHeap` in heap (sorted) order.
+/// A draining iterator over the elements of a `LazyHoleResortBinaryHeap` in heap (sorted) order.
 #[derive(Debug)]
-pub struct UnsafeLazyHoleResortDrainSorted<'a, T: Ord, A: Allocator = Global> {
-    inner: &'a mut UnsafeLazyHoleResortBinaryHeap<T, A>,
+pub struct LazyHoleResortDrainSorted<'a, T: Ord, A: Allocator = Global> {
+    inner: &'a mut LazyHoleResortBinaryHeap<T, A>,
 }
 
-impl<'a, T: Ord, A: Allocator> UnsafeLazyHoleResortDrainSorted<'a, T, A> {
+impl<'a, T: Ord, A: Allocator> LazyHoleResortDrainSorted<'a, T, A> {
     /// Returns a reference to the underlying allocator.
     pub fn allocator(&self) -> &A {
         self.inner.allocator()
     }
 }
 
-impl<'a, T: Ord, A: Allocator> Drop for UnsafeLazyHoleResortDrainSorted<'a, T, A> {
+impl<'a, T: Ord, A: Allocator> Drop for LazyHoleResortDrainSorted<'a, T, A> {
     /// Removes heap elements in heap order.
     fn drop(&mut self) {
-        struct DropGuard<'r, 'a, T: Ord, A: Allocator>(&'r mut UnsafeLazyHoleResortDrainSorted<'a, T, A>);
+        struct DropGuard<'r, 'a, T: Ord, A: Allocator>(&'r mut LazyHoleResortDrainSorted<'a, T, A>);
 
         impl<'r, 'a, T: Ord, A: Allocator> Drop for DropGuard<'r, 'a, T, A> {
             fn drop(&mut self) {
@@ -896,7 +896,7 @@ impl<'a, T: Ord, A: Allocator> Drop for UnsafeLazyHoleResortDrainSorted<'a, T, A
     }
 }
 
-impl<T: Ord, A: Allocator> Iterator for UnsafeLazyHoleResortDrainSorted<'_, T, A> {
+impl<T: Ord, A: Allocator> Iterator for LazyHoleResortDrainSorted<'_, T, A> {
     type Item = T;
 
     #[inline]
@@ -911,66 +911,66 @@ impl<T: Ord, A: Allocator> Iterator for UnsafeLazyHoleResortDrainSorted<'_, T, A
     }
 }
 
-impl<T: Ord, A: Allocator> ExactSizeIterator for UnsafeLazyHoleResortDrainSorted<'_, T, A> {}
+impl<T: Ord, A: Allocator> ExactSizeIterator for LazyHoleResortDrainSorted<'_, T, A> {}
 
-impl<T: Ord, A: Allocator> FusedIterator for UnsafeLazyHoleResortDrainSorted<'_, T, A> {}
+impl<T: Ord, A: Allocator> FusedIterator for LazyHoleResortDrainSorted<'_, T, A> {}
 
-// Sound exact-size assertion; see the UnsafeLazyHoleResortIntoIterSorted note above.
-unsafe impl<T: Ord, A: Allocator> TrustedLen for UnsafeLazyHoleResortDrainSorted<'_, T, A> {}
+// Sound exact-size assertion; see the LazyHoleResortIntoIterSorted note above.
+unsafe impl<T: Ord, A: Allocator> TrustedLen for LazyHoleResortDrainSorted<'_, T, A> {}
 
-impl<T: Ord, A: Allocator> From<Vec<T, A>> for UnsafeLazyHoleResortBinaryHeap<T, A> {
-    /// Converts a `Vec<T>` into a `UnsafeLazyHoleResortBinaryHeap<T>`, in-place, *O*(*n*).
-    fn from(vec: Vec<T, A>) -> UnsafeLazyHoleResortBinaryHeap<T, A> {
-        let mut heap = UnsafeLazyHoleResortBinaryHeap { data: vec, possibly_mal_formed: 0 };
+impl<T: Ord, A: Allocator> From<Vec<T, A>> for LazyHoleResortBinaryHeap<T, A> {
+    /// Converts a `Vec<T>` into a `LazyHoleResortBinaryHeap<T>`, in-place, *O*(*n*).
+    fn from(vec: Vec<T, A>) -> LazyHoleResortBinaryHeap<T, A> {
+        let mut heap = LazyHoleResortBinaryHeap { data: vec, possibly_mal_formed: 0 };
         heap.rebuild();
         heap
     }
 }
 
-impl<T: Ord, const N: usize> From<[T; N]> for UnsafeLazyHoleResortBinaryHeap<T> {
+impl<T: Ord, const N: usize> From<[T; N]> for LazyHoleResortBinaryHeap<T> {
     fn from(arr: [T; N]) -> Self {
         Self::from_iter(arr)
     }
 }
 
-impl<T, A: Allocator> From<UnsafeLazyHoleResortBinaryHeap<T, A>> for Vec<T, A> {
-    /// Converts a `UnsafeLazyHoleResortBinaryHeap<T>` into a `Vec<T>`. No data movement or allocation,
+impl<T, A: Allocator> From<LazyHoleResortBinaryHeap<T, A>> for Vec<T, A> {
+    /// Converts a `LazyHoleResortBinaryHeap<T>` into a `Vec<T>`. No data movement or allocation,
     /// constant time.
-    fn from(heap: UnsafeLazyHoleResortBinaryHeap<T, A>) -> Vec<T, A> {
+    fn from(heap: LazyHoleResortBinaryHeap<T, A>) -> Vec<T, A> {
         heap.data
     }
 }
 
-impl<T: Ord> FromIterator<T> for UnsafeLazyHoleResortBinaryHeap<T> {
-    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> UnsafeLazyHoleResortBinaryHeap<T> {
-        UnsafeLazyHoleResortBinaryHeap::from(iter.into_iter().collect::<Vec<_>>())
+impl<T: Ord> FromIterator<T> for LazyHoleResortBinaryHeap<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> LazyHoleResortBinaryHeap<T> {
+        LazyHoleResortBinaryHeap::from(iter.into_iter().collect::<Vec<_>>())
     }
 }
 
-impl<T, A: Allocator> IntoIterator for UnsafeLazyHoleResortBinaryHeap<T, A> {
+impl<T, A: Allocator> IntoIterator for LazyHoleResortBinaryHeap<T, A> {
     type Item = T;
-    type IntoIter = UnsafeLazyHoleResortIntoIter<T, A>;
+    type IntoIter = LazyHoleResortIntoIter<T, A>;
 
     /// Creates a consuming iterator that moves each value out of the heap in arbitrary
     /// order. The heap cannot be used after calling this.
-    fn into_iter(self) -> UnsafeLazyHoleResortIntoIter<T, A> {
-        UnsafeLazyHoleResortIntoIter { iter: self.data.into_iter() }
+    fn into_iter(self) -> LazyHoleResortIntoIter<T, A> {
+        LazyHoleResortIntoIter { iter: self.data.into_iter() }
     }
 }
 
-impl<'a, T, A: Allocator> IntoIterator for &'a UnsafeLazyHoleResortBinaryHeap<T, A> {
+impl<'a, T, A: Allocator> IntoIterator for &'a LazyHoleResortBinaryHeap<T, A> {
     type Item = &'a T;
-    type IntoIter = UnsafeLazyHoleResortIter<'a, T>;
+    type IntoIter = LazyHoleResortIter<'a, T>;
 
-    fn into_iter(self) -> UnsafeLazyHoleResortIter<'a, T> {
+    fn into_iter(self) -> LazyHoleResortIter<'a, T> {
         self.iter()
     }
 }
 
-impl<T: Ord, A: Allocator> Extend<T> for UnsafeLazyHoleResortBinaryHeap<T, A> {
+impl<T: Ord, A: Allocator> Extend<T> for LazyHoleResortBinaryHeap<T, A> {
     #[inline]
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
-        let guard = UnsafeLazyHoleResortRebuildOnDrop { rebuild_from: self.len(), heap: self };
+        let guard = LazyHoleResortRebuildOnDrop { rebuild_from: self.len(), heap: self };
         guard.heap.data.extend(iter);
     }
 
@@ -985,7 +985,7 @@ impl<T: Ord, A: Allocator> Extend<T> for UnsafeLazyHoleResortBinaryHeap<T, A> {
     }
 }
 
-impl<'a, T: 'a + Ord + Copy, A: Allocator> Extend<&'a T> for UnsafeLazyHoleResortBinaryHeap<T, A> {
+impl<'a, T: 'a + Ord + Copy, A: Allocator> Extend<&'a T> for LazyHoleResortBinaryHeap<T, A> {
     fn extend<I: IntoIterator<Item = &'a T>>(&mut self, iter: I) {
         self.extend(iter.into_iter().cloned());
     }
