@@ -40,14 +40,13 @@ plus `drain`/`pop_front`. `ratio = lazy ÷ std`.
 | statistic | value | what it means |
 |-----------|------:|---------------|
 | **median ratio** | **1.019** | the typical bench: parity (the headline — robust to the drain outlier) |
-| geometric mean ratio | 1.076 | outlier-robust "typical factor" |
 | unweighted mean ratio | 1.109 | per-bench average, pulled up by the `drain` variance below |
 | time-weighted ratio (Σlazy ÷ Σstd) | 1.368 \* | **do not read** — dominated by `drain_sum_50k` (2.40 this run) on a loaded box |
 
 **Drain variance caveat:** the two 50k ops (`drain`, `pop`) dominate the wall-clock, and `drain` is
 badly non-reproducible on this non-quiescent machine — so the aggregate wall-clock ratio is a
 measurement artifact this session, not signal. `pop_front_50k` is stable at **1.01**, and there is
-no reproducible macro-scale regression; the reliable read is the **median/geomean at parity**.
+no reproducible macro-scale regression; the reliable read is the **median at parity**.
 
 ### Full per-workload table
 
@@ -74,7 +73,7 @@ no reproducible macro-scale regression; the reliable read is the **median/geomea
 
 - **Boxing removed the small-op tax.** `new` 0.83 (was 2.51 inline), `extend_bytes` 1.01,
   `from_array_1000` 1.00, iteration (`iter`/`mut_iter`/`try_fold`) 1.01–1.05. The typical bench is now
-  parity (median 1.019, geomean 1.076).
+  parity (median 1.019).
 - **Residual small costs:** `into_iter_fold` 1.16 (the note rides inside `IntoIter`),
   `extend_chained_bytes` 1.11 (one noisy extend shape this run), `grow_1025` 1.06 (the push_front
   guard/reconcile branch, not struct size). All small absolute.

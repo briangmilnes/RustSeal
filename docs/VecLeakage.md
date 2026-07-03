@@ -61,7 +61,6 @@ variants across the upstream size range. `ratio = lazy ÷ std` (>1 = forget-safe
 |-----------|------:|---------------|
 | **unweighted mean ratio** (per-bench, equal weight) | **2.270** | plain average of the 67 ratios — inflated by sub-ns / DCE outliers (`from_iter@0` = 28×, `with_capacity@1000` = 46×) |
 | median ratio | 1.048 | the typical bench: parity |
-| geometric mean ratio | 1.232 | the outlier-robust "central" multiplicative ratio |
 | **Σ std times** | **424,004 ns** | total wall-clock of one pass over all 67 workloads, std |
 | **Σ lazy_loss_recovery times** | **442,649 ns** | same, forget-safe variant |
 | **time-weighted ratio** (Σlazy ÷ Σstd) | **1.044** | aggregate: forget-safety adds **4.4%** total wall-clock |
@@ -70,8 +69,7 @@ The unweighted mean (2.27) and the time-weighted ratio (1.04) say different, bot
 every workload counted **equally**, the average is dragged up by a handful of sub-nanosecond / dead-
 code-eliminated outliers; but **weighted by actual time**, the whole suite is only **4.4%** slower —
 the tax is nanoseconds and the time total is dominated by the big ops that are at parity
-(`dedup_random@100000` alone is ~65% of the sum, at ratio 1.01). The geometric mean (1.23) sits
-between as the outlier-robust "typical factor."
+(`dedup_random@100000` alone is ~65% of the sum, at ratio 1.01).
 
 ### Full per-workload table
 

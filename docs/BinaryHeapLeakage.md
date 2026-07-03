@@ -47,7 +47,6 @@ The 6 `alloctests/benches/binary_heap.rs` workloads. `ratio = winner ÷ original
 |-----------|------:|---------------|
 | unweighted mean ratio | 1.209 | per-bench average |
 | median ratio | 1.103 | typical bench near parity |
-| geometric mean ratio | 1.175 | outlier-robust "typical factor" |
 | Σ original times | 1.112 ms | one pass over all 6 workloads |
 | Σ winner times | 1.217 ms | same, forget+panic-safe heap |
 | **time-weighted ratio** (Σwinner ÷ Σorig) | **1.094** | aggregate: **~9% slower**, driven by `find_smallest` |
