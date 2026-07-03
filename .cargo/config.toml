@@ -1,0 +1,12 @@
+# rustseal faithfully copies rust-libs code that uses unstable library features
+# (allocator_api, trusted_len, exact_size_is_empty, extend_one; feature(test) for the
+# benches). Those `#![feature(...)]` attributes are nightly-only and the stable
+# toolchain rejects them with E0554 — unless RUSTC_BOOTSTRAP=1 is set, which unlocks
+# them on stable (the same mechanism build-verified-algorithms-core uses; it forces
+# nothing else).
+#
+# The build/test/bench/validate scripts set this per-invocation, but baking it in here
+# means ANY cargo command in this crate works too — including `cargo test`, whose
+# doc-test phase (rustdoc) compiles the crate root and would otherwise hit E0554.
+[env]
+RUSTC_BOOTSTRAP = "1"

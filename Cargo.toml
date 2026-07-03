@@ -1,0 +1,119 @@
+[package]
+name = "rustseal"
+version = "0.1.0"
+edition = "2021"
+autotests = false
+autobenches = false
+authors = ["Brian G. Milnes <briangmilnes@gmail.com>"]
+license = "Copyright (C) 2026 Brian G. Milnes, All Rights Reserved."
+description = "rustseal — collections algorithms extracted from rust-libs (pure Rust, V-renamed), staged toward verus verification"
+
+# Opt this crate into verus: `cargo verus verify` (scripts/validate.sh) runs the verifier.
+# No proofs yet — the extraction is V-renamed Rust with no `verus!{}` specs — so the
+# whole crate is marked `#[verifier::external]` and verus verifies 0 items, 0 errors.
+# That is the baseline: validate.sh is already the verifier (not a linter), and spec/proof
+# work plugs straight in by moving items out of the external module into `verus!{}`.
+[package.metadata.verus]
+verify = true
+
+# vstd is needed ONLY under verus (it links verus_builtin, without which verify=true is
+# V078). It must NOT be an unconditional dependency: rustseal also builds/tests/benches on
+# the stable toolchain (build/test/bench.sh), where vstd cannot compile. So it is an
+# OPTIONAL dep behind the `verus` feature, which scripts/validate.sh turns on and the
+# stable builds leave off — keeping rustseal genuinely dual-mode.
+[dependencies]
+vstd = { path = "/home/milnes/projects/verus/source/vstd", optional = true }
+
+[features]
+verus = ["dep:vstd"]
+
+# Test/bench-only deps, matching rust-libs' alloctests: the panic_safe test and the
+# benches shuffle with a seeded XorShift RNG so results are deterministic.
+[dev-dependencies]
+rand = { version = "0.9.0", default-features = false, features = ["alloc"] }
+rand_xorshift = "0.4.0"
+# Statistical, single-process comparison bench (benches/binary_heap/compare.rs).
+divan = "0.1"
+
+
+# test targets live in subdirectories (tests/binary_heap, tests/vec_deque, ...),
+# which Cargo does not auto-discover, so each is declared explicitly.
+[[test]]
+name = "unsafe_binary_heap"
+path = "tests/binary_heap/unsafe_binary_heap.rs"
+
+[[test]]
+name = "unsafe_lazy_hole_resort_binary_heap"
+path = "tests/binary_heap/unsafe_lazy_hole_resort_binary_heap.rs"
+
+# vec_deque is a variant-comparison harness: one test target per variant (std, lazy_loss_recovery),
+# each the same faithful test suite run against that variant's type.
+[[test]]
+name = "vec_deque_std"
+path = "tests/vec_deque/std/vec_deque.rs"
+
+[[test]]
+name = "vec_deque_lazy_loss_recovery"
+path = "tests/vec_deque/lazy_loss_recovery/vec_deque.rs"
+
+# vec variant-comparison harness: one test target per variant (std, lazy_loss_recovery).
+[[test]]
+name = "vec_std"
+path = "tests/vec/std/vec.rs"
+
+[[test]]
+name = "vec_lazy_loss_recovery"
+path = "tests/vec/lazy_loss_recovery/vec.rs"
+
+
+# bench targets live in subdirectories (tests/binary_heap, tests/vec_deque, ...),
+# which Cargo does not auto-discover, so each is declared explicitly.
+# `compare` is the Divan original-vs-winner statistical bench (its own harness).
+[[bench]]
+name = "compare"
+path = "benches/binary_heap/compare.rs"
+harness = false
+
+[[bench]]
+name = "unsafe_binary_heap"
+path = "benches/binary_heap/unsafe_binary_heap.rs"
+
+[[bench]]
+name = "unsafe_lazy_hole_resort_binary_heap"
+path = "benches/binary_heap/unsafe_lazy_hole_resort_binary_heap.rs"
+
+# vec_deque variant-comparison harness: one bench target per variant (std, lazy_loss_recovery).
+[[bench]]
+name = "vec_deque_std"
+path = "benches/vec_deque/std/vec_deque.rs"
+
+[[bench]]
+name = "vec_deque_lazy_loss_recovery"
+path = "benches/vec_deque/lazy_loss_recovery/vec_deque.rs"
+
+# Divan std-vs-lazy_loss_recovery statistical comparison (both variants interleaved, one process).
+[[bench]]
+name = "vec_deque_compare"
+path = "benches/vec_deque/compare.rs"
+harness = false
+
+# vec variant-comparison harness: one bench target per variant (std, lazy_loss_recovery).
+[[bench]]
+name = "vec_std"
+path = "benches/vec/std/vec.rs"
+
+[[bench]]
+name = "vec_lazy_loss_recovery"
+path = "benches/vec/lazy_loss_recovery/vec.rs"
+
+# Divan std-vs-lazy_loss_recovery statistical comparison (both variants interleaved, one process).
+[[bench]]
+name = "vec_compare"
+path = "benches/vec/compare.rs"
+harness = false
+
+# Own workspace root: `rustseal` is the RustSeal crate. The `exclude` keeps the
+# gitignored `RustProjects/` corpus (~1000 crates, 3.3 GB) out of the workspace so
+# cargo never scans it during a build/test.
+[workspace]
+exclude = ["RustProjects", "RustProjects/*"]

@@ -1,0 +1,63 @@
+#!/bin/bash
+# products/rustseal/scripts/compare-safe-unsafe — emit an N-WAY variant comparison
+# (bench-ratio table + test-parity table) across every implementation variant of each
+# base data structure (e.g. unsafe_/safe_/safe_opt_ `binary_heap`), by PARSING the
+# committed GRASE bench/test logs under ../logs (it never re-runs benches or tests).
+# Each variant gets its own column plus a ratio to the reference variant (`unsafe`).
+# Pure-stdlib Python does the parsing/formatting in scripts/compare_safe_unsafe.py.
+# Output is written to a committed corpse under ../analyses/ AND echoed to stdout.
+# (Add a new variant by editing VARIANT_PREFIXES in the .py; new bases need no edits.)
+#
+# Usage:
+#   compare-safe-unsafe [--bench-log <path>] [--test-log <path>]
+# Defaults to the most recent ../logs/bench-rustseal-*.log and
+# ../logs/test-rustseal-*.log. A missing/absent log is a hard error (exit non-zero) —
+# never emit a blank/half table. To refresh inputs, run scripts/bench.sh / test.sh.
+set -euo pipefail
+PROD="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PY="$PROD/scripts/compare_safe_unsafe.py"
+
+bench_log=""
+test_log=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --bench-log) bench_log="${2:-}"; shift 2 ;;
+    --test-log)  test_log="${2:-}";  shift 2 ;;
+    -h|--help)
+      grep '^# ' "${BASH_SOURCE[0]}" | sed 's/^# //'
+      exit 0 ;;
+    *) echo "compare-safe-unsafe: unknown argument: $1" >&2; exit 2 ;;
+  esac
+done
+
+latest() {
+  # newest file matching the glob pattern (in $1), or empty if none. $1 is left
+  # unquoted on purpose so the shell expands the glob; mtime compared with -nt
+  # (no ls|head, so set -o pipefail can't bite us on SIGPIPE).
+  local newest="" f
+  for f in "$PROD"/logs/$1; do
+    [[ -e "$f" ]] || continue
+    if [[ -z "$newest" || "$f" -nt "$newest" ]]; then newest="$f"; fi
+  done
+  printf '%s\n' "$newest"
+}
+
+[[ -n "$bench_log" ]] || bench_log="$(latest 'bench-rustseal-*.log')"
+[[ -n "$test_log"  ]] || test_log="$(latest 'test-rustseal-*.log')"
+
+if [[ -z "$bench_log" || ! -f "$bench_log" ]]; then
+  echo "compare-safe-unsafe: no bench log found (looked for ../logs/bench-rustseal-*.log;" \
+       "give one with --bench-log, or run scripts/bench.sh to produce one)." >&2
+  exit 1
+fi
+if [[ -z "$test_log" || ! -f "$test_log" ]]; then
+  echo "compare-safe-unsafe: no test log found (looked for ../logs/test-rustseal-*.log;" \
+       "give one with --test-log, or run scripts/test.sh to produce one)." >&2
+  exit 1
+fi
+
+mkdir -p "$PROD/analyses"
+out="$PROD/analyses/compare-safe-unsafe-$(date +%Y%m%d-%H%M%S).md"
+
+python3 "$PY" --bench-log "$bench_log" --test-log "$test_log" | tee "$out"
+echo "compare-safe-unsafe: wrote $out" >&2
