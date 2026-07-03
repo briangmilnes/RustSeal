@@ -8,3 +8,6 @@ RustProjects/
 # GRASE hook sidecar state (rule 4.8) — hook-internal, not committed
 .claude/grase-state.tsv
 .claude/grase-tool-state/
+
+# Cargo build output (rustseal root crate)
+/target/
