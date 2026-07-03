@@ -45,7 +45,6 @@ The 6 `alloctests/benches/binary_heap.rs` workloads. `ratio = winner ÷ original
 
 | statistic | value | what it means |
 |-----------|------:|---------------|
-| unweighted mean ratio | 1.209 | per-bench average |
 | median ratio | 1.103 | typical bench near parity |
 | Σ original times | 1.112 ms | one pass over all 6 workloads |
 | Σ winner times | 1.217 ms | same, forget+panic-safe heap |

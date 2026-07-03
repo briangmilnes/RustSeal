@@ -27,15 +27,16 @@ loss). Tests pass: Vec 145, VecDeque 109, BinaryHeap 34/1.
 
 `ratio = fixed ÷ baseline` (>1 = the forget-safe variant is slower).
 
-| # | collection | benches | **median** | mean | time-weighted | headline cost |
-|--:|------------|--------:|-----------:|-----:|--------------:|---------------|
-| 1 | `Vec` | 67 | **1.048** | 2.270 \* | 1.044 | tiny-`clone`/`construct` tax; `retain` 1.11; DCE artifacts \* |
-| 2 | `VecDeque` | 16 | **1.019** | 1.109 | 1.368 † | `into_iter_fold` 1.16; `drain` unstable † |
-| 3 | `BinaryHeap` | 6 | **1.103** | 1.209 | 1.094 | `find_smallest` 1.79 (the `peek_mut` mechanism) |
+| # | collection | benches | **median** | time-weighted | headline cost |
+|--:|------------|--------:|-----------:|--------------:|---------------|
+| 1 | `Vec` | 67 | **1.048** | 1.044 | tiny-`clone`/`construct` tax; `retain` 1.11; sub-ns outliers \* |
+| 2 | `VecDeque` | 16 | **1.019** | 1.368 † | `into_iter_fold` 1.16; `drain` unstable † |
+| 3 | `BinaryHeap` | 6 | **1.103** | 1.094 | `find_smallest` 1.79 (the `peek_mut` mechanism) |
 
-\* `Vec`'s mean (2.27) is inflated by dead-code-elimination outliers where the unused `std` result is
-elided (`with_capacity@1000` 46×, `from_iter@0` 28×, `from_slice@0` 8×) — absolute lazy cost is a few
-ns, not a regression; they need `black_box` in the bench. Use the median.
+\* `Vec` has three sub-nanosecond outliers where the ratio explodes on a near-zero std baseline
+(`with_capacity@1000` 46×, `from_iter@0` 28×, `from_slice@0` 8×) — absolute lazy cost is a few ns.
+The benches already `black_box`, so the cause (std-side codegen elision vs a real small-op cost) is
+**unconfirmed** on this loaded box; not a regression without a quiescent re-run. Use the median.
 
 † `VecDeque`'s time-weighted ratio is dominated by `drain_sum_50k`, which swung 0.97× ↔ 2.40× across
 runs on this loaded box (std `drain` alone ranged 18–35 µs) — a measurement artifact this session, not

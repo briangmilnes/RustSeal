@@ -59,17 +59,16 @@ variants across the upstream size range. `ratio = lazy ÷ std` (>1 = forget-safe
 
 | statistic | value | what it means |
 |-----------|------:|---------------|
-| **unweighted mean ratio** (per-bench, equal weight) | **2.270** | plain average of the 67 ratios — inflated by sub-ns / DCE outliers (`from_iter@0` = 28×, `with_capacity@1000` = 46×) |
 | median ratio | 1.048 | the typical bench: parity |
 | **Σ std times** | **424,004 ns** | total wall-clock of one pass over all 67 workloads, std |
 | **Σ lazy_loss_recovery times** | **442,649 ns** | same, forget-safe variant |
 | **time-weighted ratio** (Σlazy ÷ Σstd) | **1.044** | aggregate: forget-safety adds **4.4%** total wall-clock |
 
-The unweighted mean (2.27) and the time-weighted ratio (1.04) say different, both-true things: with
-every workload counted **equally**, the average is dragged up by a handful of sub-nanosecond / dead-
-code-eliminated outliers; but **weighted by actual time**, the whole suite is only **4.4%** slower —
-the tax is nanoseconds and the time total is dominated by the big ops that are at parity
-(`dedup_random@100000` alone is ~65% of the sum, at ratio 1.01).
+Read the **median** (1.05) as the typical bench. **Weighted by actual time**, the whole suite is only
+**4.4%** slower — the tax is nanoseconds and the time total is dominated by the big ops that are at
+parity (`dedup_random@100000` alone is ~65% of the sum, at ratio 1.01). A handful of per-bench ratios
+are distorted by sub-nanosecond outliers (below); they move neither the median nor the time-weighted
+total.
 
 ### Full per-workload table
 
@@ -120,11 +119,11 @@ the tax is nanoseconds and the time total is dominated by the big ops that are a
 | 43 | `from_elem` | 10 | 11.81 ns | 13.11 ns | 1.11 | — |
 | 44 | `from_elem` | 100 | 15.94 ns | 18.68 ns | 1.17 | slower |
 | 45 | `from_elem` | 1000 | 78.14 ns | 79.27 ns | 1.01 | — |
-| 46 | `from_iter` | 0 | 0.34 ns | 9.48 ns | 27.98 | slower (DCE) |
+| 46 | `from_iter` | 0 | 0.34 ns | 9.48 ns | 27.98 | slower (outlier) |
 | 47 | `from_iter` | 10 | 10.98 ns | 16.90 ns | 1.54 | slower |
 | 48 | `from_iter` | 100 | 17.03 ns | 24.45 ns | 1.44 | slower |
 | 49 | `from_iter` | 1000 | 71.24 ns | 82.80 ns | 1.16 | slower |
-| 50 | `from_slice` | 0 | 0.95 ns | 7.63 ns | 8.03 | slower (DCE) |
+| 50 | `from_slice` | 0 | 0.95 ns | 7.63 ns | 8.03 | slower (outlier) |
 | 51 | `from_slice` | 10 | 12.63 ns | 14.85 ns | 1.18 | slower |
 | 52 | `from_slice` | 100 | 14.17 ns | 20.81 ns | 1.47 | slower |
 | 53 | `from_slice` | 1000 | 74.05 ns | 80.89 ns | 1.09 | — |
@@ -140,14 +139,14 @@ the tax is nanoseconds and the time total is dominated by the big ops that are a
 | 63 | `with_capacity` | 0 | 1.14 ns | 1.48 ns | 1.30 | slower |
 | 64 | `with_capacity` | 10 | 13.05 ns | 12.65 ns | 0.97 | — |
 | 65 | `with_capacity` | 100 | 11.31 ns | 11.00 ns | 0.97 | — |
-| 66 | `with_capacity` | 1000 | 11.12 ns | 512.80 ns | 46.12 | slower (DCE) |
+| 66 | `with_capacity` | 1000 | 11.12 ns | 512.80 ns | 46.12 | slower (outlier) |
 | 67 | `zip_fill_1000` | — | 131.80 ns | 133.10 ns | 1.01 | — |
 
 ## 4. Reading the table
 
-**Median ratio 1.05 — the typical bench is at parity.** (Mean 2.27 is meaningless: it's dragged up
-by a few dead-code-eliminated / sub-nanosecond outliers — see the DCE note below.) The results split
-into three groups plus a set of measurement artifacts:
+**Median ratio 1.05 — the typical bench is at parity.** A few per-bench ratios are distorted by
+sub-nanosecond outliers (below) — they move no aggregate that matters. The results split into three
+groups plus a set of measurement artifacts:
 
 - **Parity at scale (the majority).** Every µs-scale, real-work op is parity: `drain_sum` 1.00,
   `grow_50k` 1.00, `iter`/`into_iter` 1.00–1.03, `clone`/`clone_from`/`extend` at 1000–50000 all
@@ -163,11 +162,12 @@ into three groups plus a set of measurement artifacts:
 - **A few genuinely faster for lazy_loss_recovery.** `dedup_random@10000` 0.91, `in_place_xor@1000`
   0.95, `collect_range@0` 0.48 — minor codegen luck, not a real speedup.
 
-**Measurement artifacts (a bench-hygiene problem for the quiescent rewrite):**
-- `with_capacity@1000` **46×** and `from_iter@0` **28×**, `from_slice@0` **8×** — dead-code
-  elimination on the **std** side: the unused result is elided to ~1–11 ns while the lazy side's
-  allocation/`Box` init survives. The *ratio* explodes but the absolute lazy cost is ~8–513 ns. These
-  need `black_box(result)` in the bench; they are **not** real regressions.
+**Measurement artifacts / unexplained outliers (to confirm on the quiescent rewrite):**
+- `with_capacity@1000` **46×** and `from_iter@0` **28×**, `from_slice@0` **8×** — the *ratio* explodes
+  on a near-zero std baseline (~1–11 ns) while the absolute lazy cost is ~8–513 ns. The benches
+  already `black_box` their inputs and returned values, so this is **not** simply a missing
+  `black_box`; the cause (std-side codegen elision vs a real small-op cost in the lazy variant) is
+  **unconfirmed** on this loaded box — do not treat as regressions without a quiescent re-run.
 - `pop_50k` **1.84×** — a micro-artifact: `pop` runs in ~0.2 ns (about one cycle), so codegen wobble
   from the extra field roughly doubles the *ratio* while the absolute cost is trivial (13.6 vs 25.0 µs
   for 50 000 pops). Confirmed not the guard (removing it doesn't recover it).
@@ -179,7 +179,7 @@ into three groups plus a set of measurement artifacts:
 
 Forget-safety here is **free on the hot macro paths** and costs a **fixed ~1–4 ns on
 construct/clone/collect** (loud at tiny sizes, gone by ~1000 elements) plus one plausibly-real ~11% on
-`retain` and a set of dead-code-elimination artifacts at sub-nanosecond baselines. That is exactly the
+`retain` and a set of unexplained sub-nanosecond outliers (to confirm on a quiescent box). That is exactly the
 profile that **the upstream Rust maintainers would reject**: not the big ops, but the
 small-`clone`/construct tax — you cannot add even one field to `Vec` without paying on its
 trivially-cheap operations, and `Vec`'s construct/clone/drop are fast enough that a single extra word

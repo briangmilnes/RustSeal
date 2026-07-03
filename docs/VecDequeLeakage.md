@@ -40,7 +40,6 @@ plus `drain`/`pop_front`. `ratio = lazy ÷ std`.
 | statistic | value | what it means |
 |-----------|------:|---------------|
 | **median ratio** | **1.019** | the typical bench: parity (the headline — robust to the drain outlier) |
-| unweighted mean ratio | 1.109 | per-bench average, pulled up by the `drain` variance below |
 | time-weighted ratio (Σlazy ÷ Σstd) | 1.368 \* | **do not read** — dominated by `drain_sum_50k` (2.40 this run) on a loaded box |
 
 **Drain variance caveat:** the two 50k ops (`drain`, `pop`) dominate the wall-clock, and `drain` is
