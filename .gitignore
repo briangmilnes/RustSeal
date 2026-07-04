@@ -4,6 +4,9 @@ RustProjects/
 
 # Editor backups
 *~
+# Emacs autosave / lock files
+\#*\#
+.\#*
 
 # GRASE hook sidecar state (rule 4.8) — hook-internal, not committed
 .claude/grase-state.tsv
