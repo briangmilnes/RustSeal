@@ -175,6 +175,33 @@ groups plus a set of measurement artifacts:
   `retain`'s in-place compaction over 100 k elements picks up ~11% from the fatter struct / guard
   interaction; the only non-artifact candidate in the set, and worth confirming on a quiescent box.
 
+## Likely meaningless benches
+
+**13 of the 118 are bogus** — every one is an empty / zero-payload member of a family whose non-zero
+siblings are real. They construct or copy nothing, so their `std` baselines sit at the timer /
+allocator floor (sub-nanosecond to a few ns) and any ratio is noise, not signal. All 13 are excluded
+from the median/average/time-weighted aggregates:
+
+| bench | why meaningless |
+|-------|-----------------|
+| `new` | `Vec::new()` — no allocation, timer floor |
+| `with_capacity_0000` | `with_capacity(0)` — no allocation |
+| `from_fn_0000` | `(0..0).collect()` — empty collect |
+| `from_elem_0000` | `repeat(5).take(0).collect()` — empty |
+| `from_slice_0000` | `VVec::from(&[])` — empty slice, no alloc |
+| `from_iter_0000` | empty `collect` |
+| `clone_0000` | clone an empty vec |
+| `extend_0000_0000` | extend an empty vec with nothing |
+| `extend_from_slice_0000_0000` | `extend_from_slice(&[])` on an empty vec |
+| `clone_from_01_0000_0000` | `clone_from` from a 0-element source (no payload copied) |
+| `clone_from_01_0010_0000` | `clone_from` from a 0-element source |
+| `clone_from_10_0000_0000` | 10× `clone_from` from a 0-element source |
+| `clone_from_10_0010_0000` | 10× `clone_from` from a 0-element source |
+
+The non-zero members of these same families ARE real and carry the fix's actual cost — the fixed
+boxed-`pending`-field tax is loudest at ~10 elements (`from_slice@10` 2.28×, `from_iter@10` 1.99×)
+and gone by ~1000. The size-0 rows are kept only for 1:1 fidelity with Rust's own suite.
+
 ## 5. Verdict
 
 Forget-safety here is **free on the hot macro paths** and costs a **fixed ~1–4 ns on

@@ -80,6 +80,16 @@ no reproducible macro-scale regression; the reliable read is the **median at par
   µs-scale op on a loaded box. Needs a quiescent machine to pin; `pop_front_50k` (1.01, stable) shows
   the big-op path is not regressed.
 
+## Likely meaningless benches
+
+**1 of the 15 is bogus: `new`.** It constructs an empty `VecDeque`, which allocates nothing, so the
+`std` baseline runs at ~0.07 ns — below the ~19 ns timer resolution. The ratio it reports is pure
+sub-nanosecond noise (the lazy variant's ~0.76 ns vs 0.07 ns reads as a ~10× "regression" that is
+entirely measurement floor). It measures the `black_box` overhead of returning an empty struct, not
+the deque. Excluded from the median/average/time-weighted aggregates. (`new` is not useless in
+principle — it isolates the fixed cost of the extra `pending` field at construction — but at this
+size the machine cannot measure it, so on a loaded box the number is meaningless.)
+
 ## 5. Verdict
 
 With the note boxed, `VVecDeque` matches `Vec`: forget-safety is **free on the hot and typical paths**

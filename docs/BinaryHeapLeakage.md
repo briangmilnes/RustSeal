@@ -75,6 +75,16 @@ The 6 `alloctests/benches/binary_heap.rs` workloads. `ratio = winner ÷ original
   compiles to byte-identical machine code to a build with no protection (LLVM deletes the guard,
   since a panic during construction discards the heap; see the README).
 
+## Likely meaningless benches
+
+**1 of the 6 is bogus: `peek_mut_deref_mut`.** It writes 1,000,000 values through a single
+`peek_mut` guard and then `mem::forget`s it. Because the writes go through a *forgotten* guard they
+are dead code, so the optimizer deletes the whole loop — the faithful port measures ~1.1 ns for it,
+i.e. one comparison, not a million writes. The number measures the compiler, not the heap. Upstream's
+`black_box(&vec)` fences the input slice, not the writes through the guard, so it does not save it;
+to be a real measurement the heap would have to be `black_box`ed *after* the writes (not forgotten).
+It is excluded from the median/average/time-weighted aggregates.
+
 ## 5. Verdict
 
 Same overall shape — free on almost everything, one real cost on the safety-critical hot op — but the

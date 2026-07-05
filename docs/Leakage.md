@@ -46,8 +46,8 @@ one Divan bench per real `#[bench]` in library/alloctests/benches/{vec,vec_deque
 setup the real bench times (the `clone`/`extend`/`clear`), state persists across iterations where
 the real bench declares it outside `b.iter`, and every real `black_box` is kept. The real element
 types are preserved (vec: u8/u32/u128/usize/i32 and a `Droppable`; vec_deque: i32/usize/u8/u16;
-binary_heap: u32). Counts: BinaryHeap 6 benches, VecDeque 15, Vec 101 (the `in_place` type-variant
-family expands to 118 Divan functions across u8/u32/u128). See docs/ExistingVecBenchmarks.md,
+binary_heap: u32). Counts: BinaryHeap 6 benches, VecDeque 15, Vec 118 (the source has 101 `#[bench]`
+items but its `in_place` macro expands to 18). See docs/ExistingVecBenchmarks.md,
 ExistingVecDequeBenchmarks.md, ExistingBinaryHeapBenchmarks.md for the per-bench list and verdicts.
 
  Where the real bench used libtest's `unsafe` buffer-reuse helper only to exclude per-iteration
@@ -65,16 +65,17 @@ trivial empty constructor, or a loop the optimizer deletes) are excluded from th
 
 `ratio = fixed ÷ baseline`
 
-Faithful 1:1 port, 2026-07-04. `Rust Lib benches` = real upstream `#[bench]`; `ported to Divan` =
-Divan functions (Vec's `in_place` type-variant family expands across u8/u32/u128); `likely
-meaningless` = bogus (empty constructor, or a loop the optimizer deletes). The median, average, and
-time-weighted ratios are over the real benches — the meaningless ones are excluded.
+Faithful 1:1 port, 2026-07-04. `Rust Lib benches` = the benchmark functions Rust compiles from the
+suite, all ported to Divan (Vec's source has 101 `#[bench]` items, but its `in_place` macro expands
+to 18, so 118 functions). `likely meaningless` = bogus (empty constructor, or a loop the optimizer
+deletes). The median, average, and time-weighted ratios are over the real benches — the meaningless
+ones are excluded.
 
-| # | collection | Rust Lib benches | ported to Divan | likely meaningless | median | average | time-weighted | largest real costs |
-|--:|------------|-----------------:|----------------:|-------------------:|-------:|--------:|--------------:|--------------------|
-| 1 | `Vec` | 101 | 118 | 13 | **1.05** | 1.18 | **1.01** | `from_slice@10` 2.28×, `from_iter@10` 1.99× |
-| 2 | `VecDeque` | 15 | 15 | 1 | **1.02** | 1.02 | **1.04** | `grow_1025` 1.12× |
-| 3 | `BinaryHeap` | 6 | 6 | 1 | **1.01** | 1.09 | **1.04** | `find_smallest_1000` 1.42× |
+| # | collection | Rust Lib benches | likely meaningless | median | average | time-weighted | largest real costs |
+|--:|------------|-----------------:|-------------------:|-------:|--------:|--------------:|--------------------|
+| 1 | `Vec` | 118 | 13 | **1.05** | 1.18 | **1.01** | `from_slice@10` 2.28×, `from_iter@10` 1.99× |
+| 2 | `VecDeque` | 15 | 1 | **1.02** | 1.02 | **1.04** | `grow_1025` 1.12× |
+| 3 | `BinaryHeap` | 6 | 1 | **1.01** | 1.09 | **1.04** | `find_smallest_1000` 1.42× |
 
 The typical bench in every collection is at or near parity (median 1.01–1.05), and by wall-clock the
 whole `Vec` suite is only **1% slower** (time-weighted 1.01) — the large-payload ops are parity; the
