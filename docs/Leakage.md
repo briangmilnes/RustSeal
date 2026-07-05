@@ -110,14 +110,52 @@ and typical paths. This biggest costs are dependent upon the data structure:
   what the Rustaceans reject.  It is why `std` ships the zero-field leak-amplification
   design (RFC 1066): they will not pay a fixed 2 ns on `clone` to make `forget` lossless.
 
+## What the faithful port corrected
+
+The suites here are a one-to-one reproduction of Rust's own alloc benchmarks
+(`library/alloctests/benches/{vec,vec_deque,binary_heap}.rs`, 1.97.0). Building them faithfully
+overturned several numbers the earlier family port had reported:
+
+1. **Timing the setup the real benches time flips the "cost" numbers to parity.** The family port
+   kept per-iteration setup out of the timed region; the real benches time it. `BinaryHeap`
+   `from_vec` 0.84×→**0.98×** and `push` 1.12×→**0.99×** were entirely artifacts of un-timing the
+   `clone`/`clear`. Timed faithfully, the only real heap cost is `find_smallest_1000` (1.42×).
+
+2. **`peek_mut_deref_mut` is a non-measurement.** It runs at ~1.1 ns for a loop that writes
+   1,000,000 values, so the optimizer deleted the loop — the writes go through a `mem::forget`ed
+   `PeekMut` guard and are dead code. Its own `black_box(&vec)` does not prevent this. The upstream
+   author intended it to defeat optimization; it does not. Reading it as a real number is a mistake.
+
+3. **The real `VecDeque` suite has no `drain` bench.** The earlier family port had *added*
+   `drain_sum_50k`; there is no such upstream benchmark. The drain forget-safety cost is simply not
+   in Rust's own suite.
+
+4. **The fix's cost is a fixed per-operation field tax, not a per-element cost.** It is the boxed
+   `pending` field's init/copy on the container header, so it appears only where the element payload
+   is near-zero — `from_slice`/`from_iter`/`clone_from` at ~10 elements (up to ~2.3×, absolute a
+   few–100 ns) — and vanishes by ~1000 elements. Weighted by wall-clock the whole `Vec` suite is
+   **1% slower** (time-weighted 1.01); the large-payload ops (`dedup@100000`, `flat_map` of 500k) are
+   parity. This is exactly the profile RFC 1066 rejects: not a big-op cost, a pervasive small-op one.
+
+## Caveats
+
+- Single run on a **non-quiescent** ThinkPad P1 (i7-12700H, hybrid P/E cores, frequency scaling,
+  Ubuntu 24.04). Sub-nanosecond rows and the small-N (~10-element) ratios are noise-prone. A
+  quiescent re-run — one P-core pinned (`taskset -c 0`), `performance` governor — would firm up the
+  small-N numbers; the harness is in place to do it.
+- Aggregates are over the **real** benches only; bogus rows (empty constructors, the deleted
+  `peek_mut_deref_mut` loop) are excluded, and a bogus-inclusive average is meaningless (e.g. `new`'s
+  sub-nanosecond 10× ratio pulls the raw `VecDeque` average to 1.66).
+
 ## Details and how to reproduce
 
-- Per-collection detail (methodology, full per-workload tables, the leak/fix mechanics):
-  `VecLeakage.md`, `VecDequeLeakage.md`, `BinaryHeapLeakage.md` (this directory).
+- Per-collection detail (real bench list, real element types, bogus/real verdict per bench):
+  `ExistingVecBenchmarks.md`, `ExistingVecDequeBenchmarks.md`, `ExistingBinaryHeapBenchmarks.md`
+  (this directory).
 - Rerun (best on a quiescent box):
   ```
   cd ~/projects/RustSeal
-  scripts/bench.sh --bench vec_compare
-  scripts/bench.sh --bench vec_deque_compare
-  scripts/bench.sh --bench compare            # binary_heap: original vs winner
+  scripts/bench.sh --bench real_binary_heap   # original vs winner
+  scripts/bench.sh --bench real_vec_deque     # std vs lazy_loss_recovery
+  scripts/bench.sh --bench real_vec
   ```
