@@ -4,77 +4,54 @@ table { width: 100% !important; border-collapse: collapse; }
 td, th { padding: 3px 7px; vertical-align: top; }
 </style>
 
-# Existing Vec Benchmarks
+# Existing Vec Benchmarks (faithful port)
 
-Original: 101 benches in the Rust standard library's own `library/alloctests/benches/vec.rs`.
-Used here: 67 comparison rows across 24 bench families in `benches/vec/compare.rs`.
+Faithful 1:1 Divan port of the real Rust suite `library/alloctests/benches/vec.rs`
+(Rust 1.97.0) — `benches/vec/real_vec.rs`, run 2026-07-04. All 101 real `#[bench]`; the
+`in_place` type-variant family expands to **118 Divan functions** across u8/u32/u128, exactly as
+upstream. Real element types preserved (u8/u32/u128/usize/i32 and a custom `Droppable`).
+`std::VVec` vs `lazy_loss_recovery::VVec`; `ratio = lazy / std`, `fastest` of 100 samples.
 
-Scope — read before the numbers:
+Aggregates over the **105 real** benches (13 bogus excluded):
+**median 1.05 · average 1.18 · time-weighted 1.01.** By wall-clock the whole suite is ~1% slower;
+the large-payload ops are parity and the cost is a small fixed per-op tax at small sizes.
+(Per-bench rows: see `benches/vec/real_vec.rs`.)
 
-- **One element type only: `u32`.** The originals' type-variant benches (u8/u32/u128,
-  e.g. `in_place`) are represented by `u32`, not run at their own types.
-- We cover every original *workload family*, but grouped — the 101 originals collapse
-  into 24 families, each run across our own size sweep — not the 101 verbatim.
-- Two variants per run: the `std` baseline vs `lazy_loss_recovery`.
+## By family
 
-The type has **65 public methods**; the 24 families time **14** distinct ones.
+| # | family (count) | elem | verdict |
+|--:|----------------|------|---------|
+| 1 | `new` (1) | u32 | **bogus** — empty ctor, timer floor |
+| 2 | `with_capacity_{0000,0010,0100,1000}` (4) | u32 | real; `_0000` bogus (no alloc) |
+| 3 | `from_fn_*` / `from_elem_*` / `from_slice_*` / `from_iter_*` (4×4) | usize | real; each `_0000` bogus (empty) |
+| 4 | `extend_*` (7) / `extend_from_slice_*` (7) | usize | real; `_0000_0000` bogus |
+| 5 | `extend_recycle` (1) | i32 | real |
+| 6 | `clone_{0000,0010,0100,1000}` (4) | usize | real; `_0000` bogus |
+| 7 | `clone_from_{01,10}_*_*` (24) | usize | real; the 4 with src-payload `_0000` bogus |
+| 8 | `in_place_{xxu8,xu32,u128}_*` (18) | u8/u32/u128 | real |
+| 9 | `in_place_recycle` / `_zip_recycle` / `_zip_iter_mut` / `transmute` / `_collect_droppable` (5) | usize/u8/u32/Droppable | real |
+| 10 | `chain_collect` / `chain_chain_collect` / `nest_chain_chain_collect` (3) | i32 | real |
+| 11 | `range_map_collect` / `chain_extend_ref` / `chain_extend_value` / `rev_1` / `rev_2` / `map_regular` / `map_fast` (7) | u32 | real |
+| 12 | `dedup_{slice_truncate,random,none,all}_{100,1000,10000,100000}` (16) | u32 | real |
+| 13 | `flat_map_collect` / `retain_iter_100000` / `retain_100000` / `retain_whole_100000` / `next_chunk` (5) | u8/i32/u32 | real |
 
-`sizes` = the `args` the family runs at. `verdict`: `keep` = real work; `size-0` = the
-size-0 row is a near-floor construction measurement (sub-ns, noise-dominated, but it
-measures the `pending`-field init cost — like VecDeque `new`); `BOGUS`/`noise`/`elided`
-explained in the summary.
+## Bogus (13)
 
-## The 24 bench families
+All size-0 / empty-payload family members — their ratios are timer/allocator floor, not signal:
+`new`, `with_capacity_0000`, `from_fn_0000`, `from_elem_0000`, `from_slice_0000`, `from_iter_0000`,
+`clone_0000`, `extend_0000_0000`, `extend_from_slice_0000_0000`, and the 4 `clone_from_*_*_0000`
+(clone_from with a zero-element source). Their non-zero siblings are all real.
 
-| # | bench | measures | times (method) | sizes | verdict |
-|--:|-------|----------|----------------|-------|---------|
-| 1 | `with_capacity` | alloc cap-n vec, ptr escapes | `with_capacity` | 0,10,100,1000 | elided (patched) |
-| 2 | `collect_range` | `(0..n).collect()` | `FromIterator` | 0,10,100,1000 | keep / size-0 |
-| 3 | `from_elem` | `repeat(5).take(n).collect()` | `FromIterator` | 0,10,100,1000 | keep / size-0 |
-| 4 | `from_slice` | `VVec::from(&[0..n])` | `From<&[T]>` | 0,10,100,1000 | keep / size-0 |
-| 5 | `from_iter` | `src.clone()` (not FromIterator) | `clone` | 0,10,100,1000 | **BOGUS** |
-| 6 | `extend_from0` | extend empty with n | `extend` | 0,10,100,1000 | keep / size-0 |
-| 7 | `extend_sym` | extend n-vec with n | `extend` | 0,10,100,1000 | keep / size-0 |
-| 8 | `extend_from_slice_sym` | `extend_from_slice` on n-vec | `extend_from_slice` | 0,10,100,1000 | keep / size-0 |
-| 9 | `clone` | clone an n-vec | `clone` | 0,10,100,1k,50k | keep / size-0 |
-| 10 | `clone_from` | `clone_from` into n-vec | `clone_from` | 0,10,100,1k,50k | keep / size-0 |
-| 11 | `in_place_xor` | in-place `enumerate().map().collect()` | `into_iter`+`FromIterator` | 10,100,1000 | keep |
-| 12 | `dedup_random` | `dedup` a sorted random vec | `dedup` | 100..100k | keep |
-| 13 | `dedup_none` | `dedup`, no adjacent dups | `dedup` | 100..100k | keep |
-| 14 | `dedup_all` | `dedup` all-equal | `dedup` | 100..100k | keep |
-| 15 | `retain_even_100k` | `retain(even)` over 100k | `retain` | 100k | keep |
-| 16 | `grow_50k` | push 50k into reserved vec | `push` | 50k | keep |
-| 17 | `pop_50k` | pop 50k empty | `pop` | 50k | **noise** |
-| 18 | `iter_sum_50k` | sum via `iter()` | `iter` | 50k | keep |
-| 19 | `into_iter_sum_50k` | sum via `into_iter()` | `into_iter` | 50k | keep |
-| 20 | `drain_sum_50k` | sum via `drain(..)` | `drain` | 50k | keep |
-| 21 | `chain_collect` | `iter.chain([1]).collect()` | `FromIterator` | 16384 | keep |
-| 22 | `range_map_collect` | `(0..16384).map().collect()` | `FromIterator` | 16384 | keep |
-| 23 | `extend_recycle` | extend empty with 1000 | `extend` | 1000 | keep |
-| 24 | `zip_fill_1000` | `zip(subst).collect()` | `FromIterator` | 1000 | keep |
+## Top real costs
 
-## Method coverage (65 public methods, 14 timed)
+| bench | lazy/std | note |
+|-------|---------:|------|
+| `from_slice_0010` | 2.28 | 10-element construct — the lazy `pending` field's fixed cost on ~10 ns of work (absolute +13 ns) |
+| `from_iter_0010` | 1.99 | same, 10-element collect |
+| `clone_from_10_*_0010` | ~1.9 | 10× clone_from into ~10 elements — per-call lazy overhead |
+| `in_place_u128_1000_i0` | 1.41 | u128 in-place collect (larger element, more copy) |
 
-Timed methods: `with_capacity`, `FromIterator`, `From<&[T]>`, `extend`,
-`extend_from_slice`, `clone`, `clone_from`, `dedup`, `retain`, `push`, `pop`, `iter`,
-`into_iter`, `drain`.
-
-Not benched — the other ~51 methods, notably: `insert`, `remove`, `swap_remove`,
-`truncate`, `resize`, `split_off`, `splice`, `extract_if`, `get`/`get_mut`,
-`as_slice`/`as_mut_slice`, `contains`, the `reserve`/`try_reserve`/`shrink` family,
-`dedup_by`/`dedup_by_key`, `rotate_left`/`right`, `fill`. **`splice` and `extract_if`
-are forget-safety-relevant and unbenched** — only `drain` (#20) covers the
-leak-amplification family here.
-
-## Bogus summary
-
-- **`from_iter` (#5)** — bogus: its body is `src.clone()`, so it times `clone`, not
-  `FromIterator` (and duplicates `clone`, #9). The real collect workloads are
-  `collect_range` (#2) and `from_elem` (#3). Rename/repurpose or delete.
-- **`with_capacity` (#1)** — was optimized away on `std` (allocation elided → 46×);
-  now patched with `black_box(v.as_ptr())`, needs a re-run to confirm parity.
-- **`pop_50k` (#17)** — a per-op ~0.2 ns operation; its 1.84× ratio is codegen wobble.
-- **Size-0 rows** of families #1–#10 are near-floor: they measure the fixed
-  `pending`-field cost on an empty vec (the study's subject, same as VecDeque `new`),
-  but at sub-ns baselines a single run's ratio is noise. Real per-op cost appears at
-  n ≥ ~100.
+The large-payload ops are parity: `dedup_random_100000` 1.00, `flat_map_collect` 1.00,
+`retain_100000` ~1.04, `clone_1000` ~1.02, `extend_1000_1000` ~1.02, `map_fast`/`map_regular` 1.00.
+The lazy variant's cost is the fixed boxed-`pending` field, visible only where the payload is tiny;
+it vanishes by ~1000 elements — which is why median is 1.05 but time-weighted is 1.01.

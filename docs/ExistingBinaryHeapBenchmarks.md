@@ -4,80 +4,32 @@ table { width: 100% !important; border-collapse: collapse; }
 td, th { padding: 3px 7px; vertical-align: top; }
 </style>
 
-# Existing BinaryHeap Benchmarks
+# Existing BinaryHeap Benchmarks (faithful port)
 
-Original: 6 benches in the Rust standard library's own `library/alloctests/benches/binary_heap.rs`
-— the entire std suite for `BinaryHeap` (std benches workloads, not methods, so 6 is all there is).
-Used here: all 6, in `benches/binary_heap/compare.rs`, comparing the **original heap**
-(`unsafe_binary_heap`) against the **winner** (`lazy_hole_resort_binary_heap`);
-`ratio = winner / original`.
+Faithful 1:1 Divan port of the real Rust suite `library/alloctests/benches/binary_heap.rs`
+(Rust 1.97.0) — `benches/binary_heap/real_binary_heap.rs`, run 2026-07-04. All 6 real
+`#[bench]`, at the real element type (u32; `into_sorted_vec`/`pop` are i32 upstream — a
+4-byte int, timing-identical). Original heap (`unsafe_binary_heap`) vs winner
+(`lazy_hole_resort_binary_heap`); `ratio = winner / original`, `fastest` of 100 samples.
 
-Scope — read before the numbers:
+Aggregates over the 5 real benches: **median 1.01 · average 1.09 · time-weighted 1.04.**
 
-- **One element type only: `u32`.** All 6 original workloads run at `u32`.
-- Two heaps per run: the original heap vs the winner.
-
-The type has **32 public methods** (see coverage table); the 6 benches time only
-**5** of them.
-
-## The 6 benches
-
-| # | bench | measures | times (method) | verdict |
-|--:|-------|----------|----------------|---------|
-| 1 | `find_smallest_1000` | keep the 1000 smallest of a 100k stream | `peek_mut` (+ `FromIterator`) | keep |
-| 2 | `from_vec` | `From<Vec>` of 100k (wrap + O(n) rebuild) | `From` / `from_raw_vec` | keep |
-| 3 | `into_sorted_vec` | `into_sorted_vec` of a 10k heap | `into_sorted_vec` | keep |
-| 4 | `peek_mut_deref_mut` | 1M-value dead-store loop through a `peek_mut` guard | `peek_mut` | **BOGUS** |
-| 5 | `pop` | pop a 10k heap empty | `pop` | keep |
-| 6 | `push` | push a shuffled 50k stream | `push` | keep |
-
-## Method coverage (32 public methods, 5 timed)
-
-`benched?` = a bench's timed region exercises this method. `setup` = used only in a
-bench's untimed input construction.
-
-| # | method | benched? | by |
-|--:|--------|----------|----|
-| 1 | `push` | ✓ | `push` |
-| 2 | `pop` | ✓ | `pop` |
-| 3 | `peek_mut` | ✓ | `find_smallest_1000`, `peek_mut_deref_mut` |
-| 4 | `into_sorted_vec` | ✓ | `into_sorted_vec` |
-| 5 | `from_raw_vec` | ✓ | `from_vec` (via `From`) |
-| 6 | `with_capacity` | setup | `pop`, `push` (untimed) |
-| 7 | `new` | — | |
-| 8 | `new_in` | — | |
-| 9 | `with_capacity_in` | — | |
-| 10 | `peek` | — | |
-| 11 | `pop_if` | — | |
-| 12 | `append` | — | |
-| 13 | `drain` | — | forget-safety op, **unbenched** |
-| 14 | `drain_sorted` | — | forget-safety op, **unbenched** |
-| 15 | `retain` | — | |
-| 16 | `refresh` | — | the lazy-reconcile op, **unbenched** |
-| 17 | `into_iter_sorted` | — | |
-| 18 | `into_vec` | — | |
-| 19 | `iter` | — | |
-| 20 | `as_slice` | — | |
-| 21 | `as_mut_slice` | — | |
-| 22 | `len` | — | |
-| 23 | `is_empty` | — | |
-| 24 | `capacity` | — | |
-| 25 | `clear` | — | |
-| 26 | `reserve` | — | |
-| 27 | `reserve_exact` | — | |
-| 28 | `try_reserve` | — | |
-| 29 | `try_reserve_exact` | — | |
-| 30 | `shrink_to` | — | |
-| 31 | `shrink_to_fit` | — | |
-| 32 | `allocator` | — | |
+| # | bench | times (method) | winner/original | verdict |
+|--:|-------|----------------|----------------:|---------|
+| 1 | `find_smallest_1000` | `peek_mut` (keep-1000-smallest of 100k) | 1.42 | real — the one cost: the winner's lazy `peek_mut` flag load/test on a 99k-iteration peek loop |
+| 2 | `from_vec` | `From<Vec>` of shuffled 100k (clone timed) | 0.98 | real, parity |
+| 3 | `into_sorted_vec` | `clone().into_sorted_vec()` of 10k | 1.01 | real, parity |
+| 4 | `pop` | `extend(10k rev)` then pop empty | 1.03 | real, parity |
+| 5 | `push` | push shuffled 50k then `clear` | 0.99 | real, parity |
+| 6 | `peek_mut_deref_mut` | write 1M values through one forgotten `peek_mut` guard | 1.08 | **BOGUS** |
 
 ## Notes
 
-- Coverage is **5 of 32** timed. That is not our omission — the std suite
-  only benches these six workloads; we mirror it exactly.
-- The gap that matters for this project: `drain`, `drain_sorted`, and `refresh` (the
-  lazy-reconcile op) are **not** benched, though the forget-safety cost is captured
-  via `peek_mut` in `find_smallest_1000`. If we want the heap's drain/reconcile cost
-  measured, those are new benches to add.
-- `peek_mut_deref_mut` (#4) is bogus by design — a dead-store loop the optimizer
-  removes (labeled NON-MEASUREMENT in the source), kept only to mirror the original.
+- **`peek_mut_deref_mut` is bogus (proven):** it runs in ~1.1 ns for a loop that writes
+  1,000,000 values, so the optimizer deleted the loop — the writes go through a `mem::forget`ed
+  `PeekMut`, making them dead code. The original's `black_box(&vec)` does not rescue it; to be
+  real it would need the heap `black_box`ed after the writes (not forgotten).
+- **Faithful setup-timing changed the numbers vs the old family port.** The family port un-timed
+  the `clone` in `from_vec`/`into_sorted_vec` and the `extend`/`clear` in `pop`/`push`, reporting
+  `from_vec` 0.84× and `push` 1.12×. Timing them as the real bench does, all four are parity;
+  `find_smallest_1000` (1.42×) is the only real cost.
