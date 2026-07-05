@@ -65,14 +65,16 @@ trivial empty constructor, or a loop the optimizer deletes) are excluded from th
 
 `ratio = fixed ÷ baseline`
 
-Faithful 1:1 port, 2026-07-04. `benches` = ported / real (bogus excluded); the aggregates are over
-the REAL benches.
+Faithful 1:1 port, 2026-07-04. `Rust Lib benches` = real upstream `#[bench]`; `ported to Divan` =
+Divan functions (Vec's `in_place` type-variant family expands across u8/u32/u128); `likely
+meaningless` = bogus (empty constructor, or a loop the optimizer deletes). The median, average, and
+time-weighted ratios are over the real benches — the meaningless ones are excluded.
 
-| # | collection | benches (real) | median | average | time-weighted | largest real cost |
-|--:|------------|---------------:|-------:|--------:|--------------:|-------------------|
-| 1 | `Vec` | 118 / 105 | **1.05** | 1.18 | **1.01** | `from_slice@10` 2.28×, `from_iter@10` 1.99× (small-N construct) |
-| 2 | `VecDeque` | 15 / 14 | **1.02** | 1.02 | **1.04** | `grow_1025` 1.12× |
-| 3 | `BinaryHeap` | 6 / 5 | **1.01** | 1.09 | **1.04** | `find_smallest_1000` 1.42× |
+| # | collection | Rust Lib benches | ported to Divan | likely meaningless | median | average | time-weighted | largest real costs |
+|--:|------------|-----------------:|----------------:|-------------------:|-------:|--------:|--------------:|--------------------|
+| 1 | `Vec` | 101 | 118 | 13 | **1.05** | 1.18 | **1.01** | `from_slice@10` 2.28×, `from_iter@10` 1.99× |
+| 2 | `VecDeque` | 15 | 15 | 1 | **1.02** | 1.02 | **1.04** | `grow_1025` 1.12× |
+| 3 | `BinaryHeap` | 6 | 6 | 1 | **1.01** | 1.09 | **1.04** | `find_smallest_1000` 1.42× |
 
 The typical bench in every collection is at or near parity (median 1.01–1.05), and by wall-clock the
 whole `Vec` suite is only **1% slower** (time-weighted 1.01) — the large-payload ops are parity; the
