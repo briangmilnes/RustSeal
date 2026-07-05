@@ -46,6 +46,7 @@ fn random_sorted(sz: usize) -> Vec<u32> {
 trait BenchVec: FromIterator<u32> + Extend<u32> + Clone + Send + Sync + Sized {
     fn new() -> Self;
     fn with_capacity(n: usize) -> Self;
+    fn as_ptr(&self) -> *const u32;
     fn from_slice(s: &[u32]) -> Self;
     fn push(&mut self, x: u32);
     fn pop(&mut self) -> Option<u32>;
@@ -66,6 +67,7 @@ macro_rules! impl_bench_vec {
         impl BenchVec for $ty<u32> {
             fn new() -> Self { $ty::new() }
             fn with_capacity(n: usize) -> Self { $ty::with_capacity(n) }
+            fn as_ptr(&self) -> *const u32 { $ty::as_ptr(self) }
             fn from_slice(s: &[u32]) -> Self { $ty::from(s) }
             fn push(&mut self, x: u32) { $ty::push(self, x) }
             fn pop(&mut self) -> Option<u32> { $ty::pop(self) }
@@ -96,9 +98,14 @@ const LEN: usize = 16384;
 // ---- construction ------------------------------------------------------------------------------
 
 #[divan::bench(types = [Std, Lazy], args = SIZES)]
-fn with_capacity<V: BenchVec>(n: usize) -> V {
-    V::with_capacity(divan::black_box(n))
+fn with_capacity<V: BenchVec>(bencher: divan::Bencher, n: usize) {
+    bencher.bench_local(|| {
+        let v = V::with_capacity(divan::black_box(n));
+        divan::black_box(v.as_ptr()); // force the buffer pointer to escape so the malloc is not elided
+        v
+    });
 }
+
 
 #[divan::bench(types = [Std, Lazy], args = SIZES)]
 fn collect_range<V: BenchVec>(bencher: divan::Bencher, n: usize) {

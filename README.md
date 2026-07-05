@@ -1,9 +1,9 @@
 # Rust Leakage
 
  The rust language has a very badly designed concept of "leak-amplification" in which core
- standard library data structures are specified to lose data when mutable iterators are
- not dropped due to 'safe' forgets and panics that may unwind the stack and allow the
- program to continue.
+standard library data structures are specified to lose data when mutable iterators are
+not dropped due to 'safe' forgets and panics that may unwind the stack and allow the
+program to continue.
 
  This project documents and investigates the cost of this intentional destruction of
 program state with alternative implementations.
@@ -55,13 +55,15 @@ program state with alternative implementations.
   or an `Rc` reference cycle — that destructor could be skipped, letting the child keep running
   after the borrowed stack frame was freed: a use-after-free reachable from safe code.
 
-  The resolution was [RFC 1066](https://rust-lang.github.io/rfcs/1066-safe-mem-forget.html), which
-  fixed the language rule that leaking is safe: a destructor is not guaranteed to run, so no API may
-  rely on `Drop` for memory safety. `thread::scoped` was removed, and scoped threads returned years
-  later as the closure-based [`std::thread::scope`](https://doc.rust-lang.org/std/thread/fn.scope.html)
-  (stable in 1.63). This is the rule that licenses the leak-amplification in `Vec::drain` and the
-  others below: losing data on a forgotten iterator is defined to be safe, and it is the type's
-  responsibility, not `forget`'s.
+  The resolution was [RFC
+  1066](https://rust-lang.github.io/rfcs/1066-safe-mem-forget.html), which changed the
+  language rule to become that leaking is safe: a destructor is not guaranteed to run, so
+  no API may rely on `Drop` for memory safety. `thread::scoped` was removed, and scoped
+  threads returned years later as the closure-based
+  [`std::thread::scope`](https://doc.rust-lang.org/std/thread/fn.scope.html) (stable in
+  1.63). This is the rule that licenses the leak-amplification in `Vec::drain` and the
+  others below: losing data on a forgotten iterator is defined to be safe, and it is the
+  type's responsibility, not `forget`'s.
 
 
   ## Leak notes on collection APIs

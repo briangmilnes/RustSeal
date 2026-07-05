@@ -74,6 +74,12 @@ name = "compare"
 path = "benches/binary_heap/compare.rs"
 harness = false
 
+# `real_binary_heap` is the faithful 1:1 Divan port of the real Rust suite (r0005).
+[[bench]]
+name = "real_binary_heap"
+path = "benches/binary_heap/real_binary_heap.rs"
+harness = false
+
 [[bench]]
 name = "unsafe_binary_heap"
 path = "benches/binary_heap/unsafe_binary_heap.rs"

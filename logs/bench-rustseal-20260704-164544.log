@@ -1,0 +1,24 @@
+   Compiling rustseal v0.1.0 (/home/milnes/projects/RustSeal)
+    Finished `bench` profile [optimized] target(s) in 1.76s
+     Running benches/binary_heap/real_binary_heap.rs (target/release/deps/real_binary_heap-2e8533e521193bc0)
+Timer precision: 12 ns
+real_binary_heap                     fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ find_smallest_1000                              │               │               │               │         │
+│  ├─ LazyHoleResortBinaryHeap<u32>  177.9 µs      │ 229.1 µs      │ 198.6 µs      │ 199 µs        │ 100     │ 100
+│  ╰─ UnsafeBinaryHeap<u32>          125.1 µs      │ 150.6 µs      │ 131.3 µs      │ 131.4 µs      │ 100     │ 100
+├─ from_vec                                        │               │               │               │         │
+│  ├─ LazyHoleResortBinaryHeap<u32>  286.6 µs      │ 427.8 µs      │ 299.9 µs      │ 301.4 µs      │ 100     │ 100
+│  ╰─ UnsafeBinaryHeap<u32>          291.1 µs      │ 425 µs        │ 297.6 µs      │ 302.9 µs      │ 100     │ 100
+├─ into_sorted_vec                                 │               │               │               │         │
+│  ├─ LazyHoleResortBinaryHeap<u32>  174.9 µs      │ 264.5 µs      │ 224.9 µs      │ 225.8 µs      │ 100     │ 100
+│  ╰─ UnsafeBinaryHeap<u32>          172.8 µs      │ 241.9 µs      │ 213.3 µs      │ 213.5 µs      │ 100     │ 100
+├─ peek_mut_deref_mut                              │               │               │               │         │
+│  ├─ LazyHoleResortBinaryHeap<u32>  1.123 ns      │ 2.308 ns      │ 1.222 ns      │ 1.2 ns        │ 100     │ 102400
+│  ╰─ UnsafeBinaryHeap<u32>          1.043 ns      │ 2.177 ns      │ 1.132 ns      │ 1.119 ns      │ 100     │ 102400
+├─ pop                                             │               │               │               │         │
+│  ├─ LazyHoleResortBinaryHeap<u32>  140 µs        │ 247 µs        │ 218.7 µs      │ 214.9 µs      │ 100     │ 100
+│  ╰─ UnsafeBinaryHeap<u32>          136 µs        │ 232.9 µs      │ 193.8 µs      │ 191.4 µs      │ 100     │ 100
+╰─ push                                            │               │               │               │         │
+   ├─ LazyHoleResortBinaryHeap<u32>  460.2 µs      │ 578.6 µs      │ 496.7 µs      │ 498.7 µs      │ 100     │ 100
+   ╰─ UnsafeBinaryHeap<u32>          466.1 µs      │ 525.4 µs      │ 479.1 µs      │ 481 µs        │ 100     │ 100
+

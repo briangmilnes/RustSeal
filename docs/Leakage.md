@@ -60,7 +60,7 @@ baseline; the tables below aggregate those ratios three ways: median, unweighted
 
 | # | collection | benches | median | average | total benchmark time weighted | largest costs |
 |--:|------------|--------:|-----------:|--------:|--------------:|---------------|
-| 1 | `Vec` | 67 | **1.048** | 2.270 \* | 1.044 | tiny-`clone`/`construct` tax; `retain` 1.11; sub-ns outliers \* |
+| 1 | `Vec` | 67 | **1.048** | 2.270 \* | 1.044 | tiny-`clone`/`construct` cost; `retain` 1.11; sub-ns outliers \* |
 | 2 | `VecDeque` | 16 | **1.019** | 1.109 | 1.368 † | `into_iter_fold` 1.16; `drain` unstable † |
 | 3 | `BinaryHeap` | 6 | **1.103** | 1.209 | 1.094 | `find_smallest` 1.79 (the `peek_mut` mechanism) |
 
@@ -75,7 +75,7 @@ runs on this loaded box (std `drain` alone ranged 18–35 µs) — a measurement
 a regression; `pop_front_50k` is stable at 1.01. Use the median.
 
 The typical bench in every collection is at or near parity (median 1.02–1.10). The cost is never
-on the hot macro path — it is a small, localized cost, and it shows up in exactly one place per
+on the hot large scale path — it is a small, localized cost, and it shows up in exactly one place per
 collection:
 
 - `Vec` — fixed ~1–4 ns on tiny `clone`/`construct` (e.g. `clone@0` 1.80×; parity by ~1000
