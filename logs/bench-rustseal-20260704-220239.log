@@ -1,0 +1,51 @@
+   Compiling rustseal v0.1.0 (/home/milnes/projects/RustSeal)
+    Finished `bench` profile [optimized] target(s) in 2.20s
+     Running benches/vec_deque/real_vec_deque.rs (target/release/deps/real_vec_deque-cf3be2936ac4f6ac)
+Timer precision: 19 ns
+real_vec_deque                fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ extend_bytes                             │               │               │               │         │
+│  ├─ VVecDeque<u8>           7.432 ns      │ 12.29 ns      │ 7.59 ns       │ 7.771 ns      │ 100     │ 25600
+│  ╰─ VVecDeque<u8>           6.744 ns      │ 44.11 ns      │ 7.44 ns       │ 7.627 ns      │ 100     │ 25600
+├─ extend_chained_bytes                     │               │               │               │         │
+│  ├─ VVecDeque<u16>          13 ns         │ 17.56 ns      │ 13.31 ns      │ 13.29 ns      │ 100     │ 25600
+│  ╰─ VVecDeque<u16>          13.51 ns      │ 13.71 ns      │ 13.63 ns      │ 13.63 ns      │ 100     │ 25600
+├─ extend_chained_trustedlen                │               │               │               │         │
+│  ├─ VVecDeque<u16>          50.92 ns      │ 141.8 ns      │ 57.81 ns      │ 59.95 ns      │ 100     │ 3200
+│  ╰─ VVecDeque<u16>          53.77 ns      │ 97.42 ns      │ 62.86 ns      │ 62.69 ns      │ 100     │ 3200
+├─ extend_trustedlen                        │               │               │               │         │
+│  ├─ VVecDeque<u16>          17.02 ns      │ 17.28 ns      │ 17.1 ns       │ 17.12 ns      │ 100     │ 12800
+│  ╰─ VVecDeque<u16>          17.53 ns      │ 17.9 ns       │ 17.72 ns      │ 17.72 ns      │ 100     │ 12800
+├─ extend_vec                               │               │               │               │         │
+│  ├─ VVecDeque<u8>           20.06 ns      │ 34.35 ns      │ 21.12 ns      │ 21.78 ns      │ 100     │ 12800
+│  ╰─ VVecDeque<u8>           18.45 ns      │ 19.1 ns       │ 18.74 ns      │ 18.74 ns      │ 100     │ 12800
+├─ from_array_1000                          │               │               │               │         │
+│  ├─ VVecDeque<usize>        121.8 ns      │ 126.5 ns      │ 123.8 ns      │ 123.9 ns      │ 100     │ 1600
+│  ╰─ VVecDeque<usize>        131.6 ns      │ 2.473 µs      │ 138.1 ns      │ 162.5 ns      │ 100     │ 100
+├─ grow_1025                                │               │               │               │         │
+│  ├─ VVecDeque<i32>          736.1 ns      │ 1.103 µs      │ 758.3 ns      │ 766.8 ns      │ 100     │ 200
+│  ╰─ VVecDeque<i32>          827.1 ns      │ 2.341 µs      │ 852.8 ns      │ 906 ns        │ 100     │ 200
+├─ into_iter                                │               │               │               │         │
+│  ├─ VVecDeque<usize>        1.633 µs      │ 2.775 µs      │ 1.672 µs      │ 1.78 µs       │ 100     │ 100
+│  ╰─ VVecDeque<usize>        1.666 µs      │ 1.762 µs      │ 1.711 µs      │ 1.706 µs      │ 100     │ 200
+├─ into_iter_fold                           │               │               │               │         │
+│  ├─ VVecDeque<usize>        292.8 ns      │ 480.7 ns      │ 314.4 ns      │ 312 ns        │ 100     │ 800
+│  ╰─ VVecDeque<usize>        295.6 ns      │ 616.3 ns      │ 340.4 ns      │ 337.5 ns      │ 100     │ 800
+├─ into_iter_next_chunk                     │               │               │               │         │
+│  ├─ VVecDeque<usize>        416.6 ns      │ 1.163 µs      │ 422 ns        │ 429.7 ns      │ 100     │ 800
+│  ╰─ VVecDeque<usize>        425.7 ns      │ 513.6 ns      │ 436.4 ns      │ 450.8 ns      │ 100     │ 800
+├─ into_iter_try_fold                       │               │               │               │         │
+│  ├─ VVecDeque<usize>        382.6 ns      │ 413.6 ns      │ 409.6 ns      │ 407.3 ns      │ 100     │ 800
+│  ╰─ VVecDeque<usize>        381.8 ns      │ 583.1 ns      │ 387.1 ns      │ 402.5 ns      │ 100     │ 800
+├─ iter_1000                                │               │               │               │         │
+│  ├─ VVecDeque<i32>          267.6 ns      │ 269.4 ns      │ 268.6 ns      │ 268.6 ns      │ 100     │ 800
+│  ╰─ VVecDeque<i32>          268.2 ns      │ 270.4 ns      │ 268.9 ns      │ 269 ns        │ 100     │ 800
+├─ mut_iter_1000                            │               │               │               │         │
+│  ├─ VVecDeque<i32>          266.7 ns      │ 431.7 ns      │ 308.1 ns      │ 301.6 ns      │ 100     │ 800
+│  ╰─ VVecDeque<i32>          266.4 ns      │ 288.9 ns      │ 287.3 ns      │ 282.5 ns      │ 100     │ 800
+├─ new                                      │               │               │               │         │
+│  ├─ VVecDeque<i32>          0.072 ns      │ 0.24 ns       │ 0.074 ns      │ 0.084 ns      │ 100     │ 819200
+│  ╰─ VVecDeque<i32>          0.761 ns      │ 0.811 ns      │ 0.765 ns      │ 0.766 ns      │ 100     │ 204800
+╰─ try_fold                                 │               │               │               │         │
+   ├─ VVecDeque<i32>          36.27 ns      │ 87.41 ns      │ 37.63 ns      │ 39.65 ns      │ 100     │ 6400
+   ╰─ VVecDeque<i32>          39.75 ns      │ 59.38 ns      │ 42.74 ns      │ 41.82 ns      │ 100     │ 6400
+

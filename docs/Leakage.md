@@ -40,16 +40,23 @@ one ignored test for private allocation).
 - A seeded rand_xorshift RNG for every randomized input, so the inputs are identical across variants
   and across runs. Input construction is kept outside the timed region.
 
- We ran the Rust standard library's own benchmark suites, ported without changing the
-workloads (library/alloctests/benches/vec.rs, vec_deque.rs, binary_heap.rs). Vec
-contributes 67 workload comparisons (the 101 upstream benches grouped by family and run
-across the upstream size range), VecDeque 16, and BinaryHeap 6.
+ We ran the Rust standard library's own benchmark suites, ported ONE-TO-ONE and faithfully:
+one Divan bench per real `#[bench]` in library/alloctests/benches/{vec,vec_deque,binary_heap}.rs
+(Rust 1.97.0), each reproducing the real body verbatim — the timed region includes whatever
+setup the real bench times (the `clone`/`extend`/`clear`), state persists across iterations where
+the real bench declares it outside `b.iter`, and every real `black_box` is kept. The real element
+types are preserved (vec: u8/u32/u128/usize/i32 and a `Droppable`; vec_deque: i32/usize/u8/u16;
+binary_heap: u32). Counts: BinaryHeap 6 benches, VecDeque 15, Vec 101 (the `in_place` type-variant
+family expands to 118 Divan functions across u8/u32/u128). See docs/ExistingVecBenchmarks.md,
+ExistingVecDequeBenchmarks.md, ExistingBinaryHeapBenchmarks.md for the per-bench list and verdicts.
 
- We ran of each of the three comparison benches on 2026-07-03. Divan took 100 timing
-samples per workload per variant (it sizes the iteration count within each sample
-automatically) and reported the fastest sample. The per-workload number is ratio = fixed /
-baseline; the tables below aggregate those ratios three ways: median, unweighted mean
-(average), and a time-weighted sum (total fixed time divided by total baseline time).
+ Where the real bench used libtest's `unsafe` buffer-reuse helper only to exclude per-iteration
+allocation from timing, we use Divan's native untimed setup (`with_inputs().bench_values()`) — the
+identical measured operation, no `unsafe`. We ran each suite on 2026-07-04. Divan took 100 timing
+samples per workload per variant and reported the fastest sample. The per-workload number is
+ratio = fixed / baseline; the tables aggregate those ratios three ways: median, unweighted mean
+(average), and a time-weighted sum (total fixed time / total baseline time). BOGUS benches (a
+trivial empty constructor, or a loop the optimizer deletes) are excluded from the REAL aggregates.
 
  The machine used is a 32 GB Lenovo Thinkpad with an Intel Core i7-12700H (12th Gen, "Alder Lake" mobile)
  which uses 14 cores at 4.7 GHz running Ubuntu 24.04.4 LTS.
@@ -58,37 +65,34 @@ baseline; the tables below aggregate those ratios three ways: median, unweighted
 
 `ratio = fixed ÷ baseline`
 
-| # | collection | benches | median | average | total benchmark time weighted | largest costs |
-|--:|------------|--------:|-----------:|--------:|--------------:|---------------|
-| 1 | `Vec` | 67 | **1.048** | 2.270 \* | 1.044 | tiny-`clone`/`construct` cost; `retain` 1.11; sub-ns outliers \* |
-| 2 | `VecDeque` | 16 | **1.019** | 1.109 | 1.368 † | `into_iter_fold` 1.16; `drain` unstable † |
-| 3 | `BinaryHeap` | 6 | **1.103** | 1.209 | 1.094 | `find_smallest` 1.79 (the `peek_mut` mechanism) |
+Faithful 1:1 port, 2026-07-04. `benches` = ported / real (bogus excluded); the aggregates are over
+the REAL benches.
 
-\* `Vec` has three sub-nanosecond outliers where the ratio explodes on a near-zero std baseline
-(`with_capacity@1000` 46×, `from_iter@0` 28×, `from_slice@0` 8×) — absolute lazy cost is a few ns —
-which inflate `Vec`'s average to 2.27 while the median stays at 1.05. The benches already
-`black_box`, so the cause (std-side codegen elision vs a real small-op cost) is unconfirmed on this
-loaded box; not a regression without a quiescent re-run. Prefer the median.
+| # | collection | benches (real) | median | average | time-weighted | largest real cost |
+|--:|------------|---------------:|-------:|--------:|--------------:|-------------------|
+| 1 | `Vec` | 118 / 105 | **1.05** | 1.18 | **1.01** | `from_slice@10` 2.28×, `from_iter@10` 1.99× (small-N construct) |
+| 2 | `VecDeque` | 15 / 14 | **1.02** | 1.02 | **1.04** | `grow_1025` 1.12× |
+| 3 | `BinaryHeap` | 6 / 5 | **1.01** | 1.09 | **1.04** | `find_smallest_1000` 1.42× |
 
-† `VecDeque`'s time-weighted ratio is dominated by `drain_sum_50k`, which swung 0.97× ↔ 2.40× across
-runs on this loaded box (std `drain` alone ranged 18–35 µs) — a measurement artifact this session, not
-a regression; `pop_front_50k` is stable at 1.01. Use the median.
+The typical bench in every collection is at or near parity (median 1.01–1.05), and by wall-clock the
+whole `Vec` suite is only **1% slower** (time-weighted 1.01) — the large-payload ops are parity; the
+cost is a small fixed per-operation tax that shows up only at small sizes:
 
-The typical bench in every collection is at or near parity (median 1.02–1.10). The cost is never
-on the hot large scale path — it is a small, localized cost, and it shows up in exactly one place per
-collection:
-
-- `Vec` — fixed ~1–4 ns on tiny `clone`/`construct` (e.g. `clone@0` 1.80×; parity by ~1000
-  elements). `retain_even_100k` 1.11× is the one plausibly-real macro slowdown. `pop_50k` 1.84× is a
-  micro-artifact (~0.2 ns/op — codegen wobble doubling the ratio, absolute cost trivial). Macro ops
-  (`grow` 1.00, `drain` 1.00, `iter`, `dedup@100k`) parity.
-- `VecDeque` — after boxing the note, the tiny-op cost is gone (`new` 0.83×, `extend_bytes` 1.01×,
-  down from 2.5× / 1.26× inline). Residual: `into_iter_fold` 1.16× (the note rides in `IntoIter`),
-  `grow_1025` 1.06×. Macro ops parity; `drain` unreliable this session.
-- `BinaryHeap` — `find_smallest_1000` 1.79× is the one real cost, and it is the lazy `peek_mut`
-  *mechanism* (flag load/test on a 99k-iteration peek loop), not the panic protection (which is
-  provably zero-cost on `from_vec`). Everything else parity or faster (`from_vec` 0.84×,
-  `into_sorted_vec` 1.09×, `pop` 1.08×). `peek_mut_deref_mut` 1.34× is a non-measurement (dead-store).
+- `Vec` (105 real of 118) — the large-payload ops are parity (`dedup@100000` 1.00, `flat_map` of 500k
+  1.00, `retain_100000` ~1.04, `clone@1000` ~1.02). The cost concentrates on **small-N construct /
+  `clone_from`**, where the lazy variant's boxed `pending` field is a fixed per-operation cost:
+  `from_slice@10` 2.28×, `from_iter@10` 1.99×, `clone_from ×10` at 10 elements ~1.9× — absolute a
+  few–100 ns, gone by ~1000 elements. 13 bogus = the size-0 / empty-payload family members (`new`,
+  every `*_0000`), whose ratios are timer/allocator floor.
+- `VecDeque` (14 real of 15) — parity throughout (median 1.02, time-weighted 1.04); residuals
+  `grow_1025` 1.12×, `try_fold` 1.10×, `from_array_1000` 1.08×. `new` is bogus (empty construct, below
+  the ~19 ns timer floor). NOTE: the real suite has **no `drain` bench** — the earlier family port
+  had invented one.
+- `BinaryHeap` (5 real of 6) — `find_smallest_1000` 1.42× is the one real cost, the winner's lazy
+  `peek_mut` flag load/test on a 99k-iteration peek loop; `from_vec` 0.98×, `into_sorted_vec` 1.01×,
+  `pop` 1.03×, `push` 0.99× are all parity once the setup is timed faithfully (the family port's
+  0.84/1.12 were artifacts of un-timing the `clone`/`clear`). `peek_mut_deref_mut` is bogus — 1.1 ns
+  for a 1,000,000-write loop, i.e. the optimizer deleted it (the writes go through a forgotten guard).
 
 ## Discussion
 

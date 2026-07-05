@@ -103,6 +103,12 @@ name = "vec_deque_compare"
 path = "benches/vec_deque/compare.rs"
 harness = false
 
+# Faithful Divan port of the real alloctests VecDeque suite (all 15 #[bench], real types) — r0005.
+[[bench]]
+name = "real_vec_deque"
+path = "benches/vec_deque/real_vec_deque.rs"
+harness = false
+
 # vec variant-comparison harness: one bench target per variant (std, lazy_loss_recovery).
 [[bench]]
 name = "vec_std"
@@ -116,6 +122,13 @@ path = "benches/vec/lazy_loss_recovery/vec.rs"
 [[bench]]
 name = "vec_compare"
 path = "benches/vec/compare.rs"
+harness = false
+
+# Faithful Divan port of the real alloctests/benches/vec.rs (all 101 upstream #[bench],
+# in_place expanded across u8/u32/u128, real types) — r0005.
+[[bench]]
+name = "real_vec"
+path = "benches/vec/real_vec.rs"
 harness = false
 
 # Own workspace root: `rustseal` is the RustSeal crate. The `exclude` keeps the
