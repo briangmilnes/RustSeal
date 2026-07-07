@@ -70,7 +70,7 @@ program state with alternative implementations.
 
   - **1.** `Vec` — `drain` → **§ Leaking** ("…the vector may have lost and leaked elements arbitrarily, including elements outside the range"). <https://doc.rust-lang.org/std/vec/struct.Vec.html#method.drain>
   - **2.** `VecDeque` — `drain` → **§ Leaking** ("…the deque may have lost and leaked elements arbitrarily, including elements outside the range"). <https://doc.rust-lang.org/std/collections/vec_deque/struct.VecDeque.html#method.drain>
-  - **3.** `BinaryHeap` — `peek_mut` → **Leaking note** ("If the `PeekMut` value is leaked, some heap elements might get leaked along with it, but the remaining elements will remain a valid heap"). <https://doc.rust-lang.org/std/collections/struct.BinaryHeap.html#method.peek_mut>
+  - **3.** `BinaryHeap` — `peek_mut` → **§ Leaking** ("If the `PeekMut` value is leaked, some heap elements might get leaked along with it, but the remaining elements will remain a valid heap"). <https://doc.rust-lang.org/std/collections/struct.BinaryHeap.html#method.peek_mut>
 
   ## Benchmark results
 
