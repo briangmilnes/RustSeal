@@ -1,0 +1,197 @@
+=== validate.sh 20260708-083421 ===
+verus: /home/milnes/projects/verus/source/target-verus/release/verus
+Verus
+  Version: 0.2026.07.07.109c8e0
+=== verus exp001_identity_immutable_iter_u32.rs ===
+verification results:: 2 verified, 0 errors
+=== verus exp002_set_ends_zero_index_partial_eq.rs ===
+verification results:: 1 verified, 0 errors
+=== verus exp003_set_ends_zero_mut_cursor.rs ===
+verification results:: 1 verified, 0 errors
+=== verus exp004_set_ends_zero_mut_cursor_forget.rs ===
+error: [V713] `core::mem::forget` is not supported (note: you may be able to add a Verus specification to this function with `assume_specification`) (note: the vstd library provides some specification for the Rust std library, but it is currently limited)
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp004_set_ends_zero_mut_cursor_forget.rs:41:9
+   |
+41 |         core::mem::forget(f);   // forget the mutable cursor -> V713, proof fails
+   |         ^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: The following declaration may resolve this error:
+           pub assume_specification<T> [std::mem::forget] (_0: T);
+
+error: aborting due to 1 previous error
+
+=== verus exp005_leak_mem_forget.rs ===
+error: [V713] `core::mem::forget` is not supported (note: you may be able to add a Verus specification to this function with `assume_specification`) (note: the vstd library provides some specification for the Rust std library, but it is currently limited)
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp005_leak_mem_forget.rs:22:5
+   |
+22 |     core::mem::forget(x);
+   |     ^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: The following declaration may resolve this error:
+           pub assume_specification<T> [std::mem::forget] (_0: T);
+
+error: aborting due to 1 previous error
+
+=== verus exp006_leak_box_leak.rs ===
+error: [V713] `alloc::boxed::impl&%9::leak` is not supported (note: you may be able to add a Verus specification to this function with `assume_specification`) (note: the vstd library provides some specification for the Rust std library, but it is currently limited)
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp006_leak_box_leak.rs:21:5
+   |
+21 |     Box::leak(b)
+   |     ^^^^^^^^^^^^
+   |
+   = help: The following declaration may resolve this error:
+           pub assume_specification<T, A, 'a> [std::boxed::Box::<T, A>::leak] (_0: std::boxed::Box<T, A>) -> &'a T
+           where
+           A: std::alloc::Allocator,
+           T: std::marker::MetaSized + ?Sized,;
+
+error: aborting due to 1 previous error
+
+=== verus exp007_leak_vec_leak.rs ===
+error: [V713] `alloc::vec::impl&%1::leak` is not supported (note: you may be able to add a Verus specification to this function with `assume_specification`) (note: the vstd library provides some specification for the Rust std library, but it is currently limited)
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp007_leak_vec_leak.rs:21:5
+   |
+21 |     v.leak()
+   |     ^^^^^^^^
+   |
+   = help: The following declaration may resolve this error:
+           pub assume_specification<T, A, 'a> [std::vec::Vec::<T, A>::leak] (_0: std::vec::Vec<T, A>) -> &'a [T]
+           where
+           A: std::alloc::Allocator,;
+
+error: aborting due to 1 previous error
+
+=== verus exp008_leak_string_leak.rs ===
+error: [V713] `alloc::string::impl&%0::leak` is not supported (note: you may be able to add a Verus specification to this function with `assume_specification`) (note: the vstd library provides some specification for the Rust std library, but it is currently limited)
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp008_leak_string_leak.rs:21:5
+   |
+21 |     s.leak()
+   |     ^^^^^^^^
+   |
+   = help: The following declaration may resolve this error:
+           pub assume_specification<'a> [std::string::String::leak] (_0: std::string::String) -> &'a str;
+
+error: aborting due to 1 previous error
+
+=== verus exp009_leak_manuallydrop.rs ===
+verification results:: 1 verified, 0 errors
+=== verus exp010_leak_cstring_into_raw.rs ===
+error: [V713] `alloc::ffi::c_str::impl&%1::into_raw` is not supported (note: you may be able to add a Verus specification to this function with `assume_specification`) (note: the vstd library provides some specification for the Rust std library, but it is currently limited)
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp010_leak_cstring_into_raw.rs:23:5
+   |
+23 |     c.into_raw()
+   |     ^^^^^^^^^^^^
+   |
+   = help: The following declaration may resolve this error:
+           pub assume_specification [std::ffi::CString::into_raw] (_0: std::ffi::CString) -> *mut i8;
+
+error: [V712] `alloc::ffi::c_str::CString` is not supported (note: you may be able to add a Verus specification to this type with the `external_type_specification` attribute) (note: the vstd library provides some specification for the Rust std library, but it is currently limited)
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp010_leak_cstring_into_raw.rs:22:9
+   |
+22 | fn leak(c: CString) -> *mut core::ffi::c_char {
+   |         ^^^^^^^^^^
+23 |     c.into_raw()
+   |     -
+   |
+   = help: The following declaration may resolve this error:
+           #[verifier::external_type_specification]
+           pub struct ExCString(std::ffi::CString);
+
+error: aborting due to 2 previous errors
+
+=== verus exp011_leak_box_into_raw.rs ===
+error: [V713] `alloc::boxed::impl&%8::into_raw` is not supported (note: you may be able to add a Verus specification to this function with `assume_specification`) (note: the vstd library provides some specification for the Rust std library, but it is currently limited)
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp011_leak_box_into_raw.rs:21:5
+   |
+21 |     Box::into_raw(b)
+   |     ^^^^^^^^^^^^^^^^
+   |
+   = help: The following declaration may resolve this error:
+           pub assume_specification<T> [std::boxed::Box::<T>::into_raw] (_0: std::boxed::Box<T>) -> *mut T
+           where
+           T: std::marker::MetaSized + ?Sized,;
+
+error: aborting due to 1 previous error
+
+=== verus exp012_leak_rc_into_raw.rs ===
+error: [V713] `alloc::rc::impl&%17::into_raw` is not supported (note: you may be able to add a Verus specification to this function with `assume_specification`) (note: the vstd library provides some specification for the Rust std library, but it is currently limited)
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp012_leak_rc_into_raw.rs:22:5
+   |
+22 |     Rc::into_raw(r)
+   |     ^^^^^^^^^^^^^^^
+   |
+   = help: The following declaration may resolve this error:
+           pub assume_specification<T> [std::rc::Rc::<T>::into_raw] (_0: std::rc::Rc<T>) -> *const T
+           where
+           T: std::marker::MetaSized + ?Sized,;
+
+error: aborting due to 1 previous error
+
+=== verus exp013_leak_arc_into_raw.rs ===
+error: [V713] `alloc::sync::impl&%24::into_raw` is not supported (note: you may be able to add a Verus specification to this function with `assume_specification`) (note: the vstd library provides some specification for the Rust std library, but it is currently limited)
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp013_leak_arc_into_raw.rs:22:5
+   |
+22 |     Arc::into_raw(a)
+   |     ^^^^^^^^^^^^^^^^
+   |
+   = help: The following declaration may resolve this error:
+           pub assume_specification<T> [std::sync::Arc::<T>::into_raw] (_0: std::sync::Arc<T>) -> *const T
+           where
+           T: std::marker::MetaSized + ?Sized,;
+
+error: aborting due to 1 previous error
+
+=== verus exp014_leak_vec_into_raw_parts.rs ===
+error: [V713] `alloc::vec::impl&%0::into_raw_parts` is not supported (note: you may be able to add a Verus specification to this function with `assume_specification`) (note: the vstd library provides some specification for the Rust std library, but it is currently limited)
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp014_leak_vec_into_raw_parts.rs:25:5
+   |
+25 |     v.into_raw_parts()
+   |     ^^^^^^^^^^^^^^^^^^
+   |
+   = help: The following declaration may resolve this error:
+           pub assume_specification<T> [std::vec::Vec::<T>::into_raw_parts] (_0: std::vec::Vec<T>) -> (*mut T, usize, usize);
+
+error: aborting due to 1 previous error
+
+=== verus exp015_drop_requires_rejected.rs ===
+error: [V588] requires are not allowed on the implementation for Drop
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp015_drop_requires_rejected.rs:24:5
+   |
+24 |     fn drop(&mut self)
+   |     ^^^^^^^^^^^^^^^^^^
+
+error: aborting due to 1 previous error
+
+=== verus exp016_drop_ensures_false_rejected.rs ===
+error: [V003] postcondition not satisfied
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp016_drop_ensures_false_rejected.rs:26:17
+   |
+26 |         ensures false
+   |                 ^^^^^ failed this postcondition
+...
+29 |     { }
+   |     --- at the end of the function body
+
+verification results:: 0 verified, 1 errors
+error: aborting due to 1 previous error
+
+=== verus exp017_drop_ensures_external_mutation.rs ===
+error: [V017] assertion failed
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp017_drop_ensures_external_mutation.rs:43:12
+   |
+43 |     assert(x == 0);                       // relies on the destructor having run
+   |            ^^^^^^ assertion failed
+
+verification results:: 1 verified, 1 errors
+error: aborting due to 1 previous error
+
+=== verus exp018_manuallydrop_skips_drop_effect.rs ===
+error: [V017] assertion failed
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp018_manuallydrop_skips_drop_effect.rs:45:12
+   |
+45 |     assert(x == 0);   // FALSE at runtime — verus must NOT prove it
+   |            ^^^^^^ assertion failed
+
+verification results:: 1 verified, 1 errors
+error: aborting due to 1 previous error
+

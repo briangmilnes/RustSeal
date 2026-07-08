@@ -1,0 +1,32 @@
+=== validate.sh 20260708-083239 ===
+verus: /home/milnes/projects/verus/source/target-verus/release/verus
+Verus
+  Version: 0.2026.07.07.109c8e0
+=== verus exp017_drop_ensures_external_mutation.rs ===
+error: [V394] disallowed: field expression for a non-visible datatype
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp017_drop_ensures_external_mutation.rs:23:18
+   |
+19 | struct Zeroer<'a> { pub r: &'a mut u64 }
+   | ---------------------------------------- this datatype is only visible to `exp017_drop_ensures_external_mutation`
+...
+23 |         ensures *final(self).r == 0
+   |                  ^^^^^^^^^^^^^ this field expression is disallowed because of non-visibility
+   |
+   = help: note that because this is a 'ensures' clause of public function, this field expression must be well-formed everywhere, which is wider than `exp017_drop_ensures_external_mutation`
+
+error: aborting due to 1 previous error
+
+=== verus exp018_manuallydrop_skips_drop_effect.rs ===
+error: [V394] disallowed: field expression for a non-visible datatype
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp018_manuallydrop_skips_drop_effect.rs:27:18
+   |
+23 | struct Zeroer<'a> { pub r: &'a mut u64 }
+   | ---------------------------------------- this datatype is only visible to `exp018_manuallydrop_skips_drop_effect`
+...
+27 |         ensures *final(self).r == 0
+   |                  ^^^^^^^^^^^^^ this field expression is disallowed because of non-visibility
+   |
+   = help: note that because this is a 'ensures' clause of public function, this field expression must be well-formed everywhere, which is wider than `exp018_manuallydrop_skips_drop_effect`
+
+error: aborting due to 1 previous error
+

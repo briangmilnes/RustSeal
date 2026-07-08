@@ -1,0 +1,21 @@
+[package]
+name = "verus-lab"
+version = "0.1.0"
+edition = "2024"
+authors = ["Brian G. Milnes <briangmilnes@gmail.com>"]
+license = "Copyright (C) 2026 Brian G. Milnes, All Rights Reserved."
+description = "RustSeal verus scratch lab — single-file verus experiments verified directly by the verus binary (scripts/validate.sh), not by cargo."
+
+[lints.rust]
+dead_code = "allow"
+unused_imports = "allow"
+
+# Detached workspace. The experiments in src/experiments/*.rs are verus-macro
+# source verified by the verus binary, NOT by rustc/cargo, so this crate is its
+# own workspace root (empty [workspace] table) and is excluded from the RustSeal
+# root workspace. lib.rs is doc-only and does NOT `mod`-declare the experiments,
+# so `cargo build` never tries to compile the `verus!` sources with rustc.
+[workspace]
+
+[profile.dev]
+debug = false

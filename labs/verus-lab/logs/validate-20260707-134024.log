@@ -1,0 +1,22 @@
+=== validate.sh 20260707-134024 ===
+verus: /home/milnes/projects/verus/source/target-verus/release/verus
+Verus
+  Version: 0.2026.07.07.109c8e0
+=== verus exp001_identity_immutable_iter_u32.rs ===
+verification results:: 2 verified, 0 errors
+=== verus exp002_set_ends_zero_index_partial_eq.rs ===
+verification results:: 1 verified, 0 errors
+=== verus exp003_set_ends_zero_mut_cursor.rs ===
+verification results:: 1 verified, 0 errors
+=== verus exp004_set_ends_zero_mut_cursor_forget.rs ===
+error: [V713] `core::mem::forget` is not supported (note: you may be able to add a Verus specification to this function with `assume_specification`) (note: the vstd library provides some specification for the Rust std library, but it is currently limited)
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp004_set_ends_zero_mut_cursor_forget.rs:41:9
+   |
+41 |         core::mem::forget(f);   // forget the mutable cursor -> V713, proof fails
+   |         ^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: The following declaration may resolve this error:
+           pub assume_specification<T> [std::mem::forget] (_0: T);
+
+error: aborting due to 1 previous error
+

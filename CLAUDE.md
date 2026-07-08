@@ -15,3 +15,4 @@ process rules. Any rules specific to RustSeal go above the imports.
 
 @~/projects/ComputAItionalThinking/ComputAItionalThinkingRules.md
 @~/projects/GRASE/GRASERules.md
+@~/projects/ComputAItionalThinking/ExperAImentalThinking.md

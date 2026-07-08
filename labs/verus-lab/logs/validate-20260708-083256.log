@@ -1,0 +1,24 @@
+=== validate.sh 20260708-083256 ===
+verus: /home/milnes/projects/verus/source/target-verus/release/verus
+Verus
+  Version: 0.2026.07.07.109c8e0
+=== verus exp017_drop_ensures_external_mutation.rs ===
+error: [V017] assertion failed
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp017_drop_ensures_external_mutation.rs:36:12
+   |
+36 |     assert(x == 0);                       // relies on the destructor having run
+   |            ^^^^^^ assertion failed
+
+verification results:: 1 verified, 1 errors
+error: aborting due to 1 previous error
+
+=== verus exp018_manuallydrop_skips_drop_effect.rs ===
+error: [V017] assertion failed
+  --> /home/milnes/projects/RustSeal/labs/verus-lab/src/experiments/exp018_manuallydrop_skips_drop_effect.rs:40:12
+   |
+40 |     assert(x == 0);   // FALSE at runtime — verus must NOT prove it
+   |            ^^^^^^ assertion failed
+
+verification results:: 1 verified, 1 errors
+error: aborting due to 1 previous error
+
