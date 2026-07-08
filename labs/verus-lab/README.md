@@ -19,6 +19,32 @@ Verus binary: `$VERUS`, else `verus` on `PATH`, else the local release build at
 - `scripts/validate.sh` — verify every `src/experiments/*.rs` (or a file passed
   as an argument) with verus; logs to `logs/`. `build.sh` delegates to it.
 
+## All experiments
+
+Complete index of the committed experiments (`src/experiments/`), grouped by the
+three studies below. All results are against verus `0.2026.07.07.109c8e0`.
+
+| # | file | result |
+|---|---|---|
+| 1 | `exp001_identity_immutable_iter_u32.rs` | SUCCEEDS — 2 verified |
+| 2 | `exp002_set_ends_zero_index_partial_eq.rs` | SUCCEEDS — 1 verified |
+| 3 | `exp003_set_ends_zero_mut_cursor.rs` | SUCCEEDS — 1 verified |
+| 4 | `exp004_set_ends_zero_mut_cursor_forget.rs` | FAILS — V713 `mem::forget` |
+| 5 | `exp005_leak_mem_forget.rs` | FAILS — V713 `mem::forget` |
+| 6 | `exp006_leak_box_leak.rs` | FAILS — V713 `Box::leak` |
+| 7 | `exp007_leak_vec_leak.rs` | FAILS — V713 `Vec::leak` |
+| 8 | `exp008_leak_string_leak.rs` | FAILS — V713 `String::leak` |
+| 9 | `exp009_leak_manuallydrop.rs` | SUCCEEDS — 1 verified (NOT rejected) |
+| 10 | `exp010_leak_cstring_into_raw.rs` | FAILS — V713 + V712 `CString` |
+| 11 | `exp011_leak_box_into_raw.rs` | FAILS — V713 `Box::into_raw` |
+| 12 | `exp012_leak_rc_into_raw.rs` | FAILS — V713 `Rc::into_raw` |
+| 13 | `exp013_leak_arc_into_raw.rs` | FAILS — V713 `Arc::into_raw` |
+| 14 | `exp014_leak_vec_into_raw_parts.rs` | FAILS — V713 `Vec::into_raw_parts` |
+| 15 | `exp015_drop_requires_rejected.rs` | FAILS — V588 requires on Drop |
+| 16 | `exp016_drop_ensures_false_rejected.rs` | FAILS — V003 ensures unproven |
+| 17 | `exp017_drop_ensures_external_mutation.rs` | FAILS — V017 assert not provable |
+| 18 | `exp018_manuallydrop_skips_drop_effect.rs` | FAILS — V017 (attack fails: SOUND) |
+
 ## Experiments (`scripts/validate.sh`)
 
 The first three establish an identity/mutation arc over a `Vec<u32>`; the fourth
@@ -103,23 +129,53 @@ unspecified. `BinaryHeap` and `PeekMut` are entirely absent (V712); `Vec`/
 So the leaking guard whose `Drop` does the write-back — the mechanism of leak
 amplification — is exactly what verus does not model.
 
-## Two verus limitations these experiments pin down
+## Finding: verus has no mutable iterators at all
 
-1. **No mutable iterator (`iter_mut`).** `<[T]>::iter_mut` is rejected with
-   `error [V713] core::slice::<impl [T]>::iter_mut is not supported`, and
-   `core::slice::IterMut` has no `IteratorSpecImpl`, so a
-   `for x in v.iter_mut()` loop cannot be verified. exp003 therefore realizes
-   "a mutable iterator into the vector" with the verus-supported mutable-cursor
-   pair `<[T]>::first_mut` / `<[T]>::last_mut` (from `vstd::std_specs::slice`),
-   whose prophetic `final(...)` ensures compose into the exp002 postcondition.
-   Contrast exp001, where the **immutable** iterator `<[T]>::iter` *is* fully
-   specced (ghost `it.index()` / `it.seq()`), so the `for x in it: v.iter()`
-   loop verifies.
+exp003/exp004 showed `<[T]>::iter_mut` is rejected (`V713`); a survey of the
+whole verus tree (`~/projects/verus`, version `0.2026.07.07`) shows the absence
+is total, not slice-specific:
 
-2. **No model for `mem::forget`.** `core::mem::forget` is rejected with
-   `error [V713] core::mem::forget is not supported`. exp004 aborts at the
-   `forget` call before its postcondition is even attempted. Supplying an
-   `assume_specification` for `mem::forget` (as verus's error suggests) would be
-   the way to lift this — left for a later experiment.
+- **No spec for `iter_mut`/`IterMut` anywhere.** Zero `assume_specification` or
+  `external_type_specification` for them in vstd; zero `iter_mut` inside any
+  `verus_code!` test or any example source. (The `iter_mut` occurrences in the
+  verus tree are Rust's own `.iter_mut()` inside the *compiler's* implementation,
+  not verus-language support.)
+- **Every iterator verus models yields a shared `&T` or an owned value — never
+  `&mut`.** The complete set of `IteratorSpecImpl` impls in vstd:
 
-Both were probed against verus `0.2026.07.07.109c8e0`.
+  | collection | iterator type | item |
+  |---|---|---|
+  | slice `[T]` | `slice::Iter` | `&T` |
+  | `Vec` | `IntoIter` | owned `T` |
+  | `VecDeque` | `vec_deque::Iter` | `&T` |
+  | `HashMap` | `Keys` / `Values` / `Iter` | `&K` / `&V` / `&(K,V)` |
+  | `HashSet` | `hash_set::Iter` | `&K` |
+  | `BTreeMap` | `Keys` / `Values` / `Iter` | shared |
+  | `BTreeSet` | `btree_set::Iter` | `&T` |
+  | `String` | `Chars` | owned `char` |
+  | ranges | `Range` / `RangeInclusive` | owned |
+  | adapters | `Rev<I>`, `&mut I` | forwarded |
+
+  The one entry that looks relevant — `impl<I> IteratorSpecImpl for &mut I`
+  (`vstd/std_specs/iter.rs`) — is the blanket "a `&mut` to an iterator is itself
+  an iterator" forwarding impl: iteration *through a mutable reference to an
+  iterator*, not an iterator whose `Item` is `&mut T`. It gives nothing for
+  mutating a collection's elements.
+
+Consequence: there is no `Vec::iter_mut`, no `slice::IterMut`, no mutable
+iteration over any container. The only supported ways to mutate library data are
+the direct accessors — `set`/`index`, `first_mut`/`last_mut`, `as_mut_slice`,
+`push`/`pop`, etc. exp003 therefore realizes "a mutable iterator into the vector"
+with `<[T]>::first_mut` / `<[T]>::last_mut`, whose prophetic `final(...)` ensures
+compose into the exp002 postcondition. Contrast exp001, where the **immutable**
+`<[T]>::iter` *is* fully specced (ghost `it.index()` / `it.seq()`), so the
+`for x in it: v.iter()` loop verifies.
+
+## Finding: no model for `mem::forget`
+
+`core::mem::forget` is rejected with `error [V713] core::mem::forget is not
+supported` (exp004, exp005). The call aborts before any postcondition is
+attempted. Supplying an `assume_specification` for `mem::forget` (as verus's
+error suggests) would be the way to lift this — left for a later experiment.
+
+All findings were validated against verus `0.2026.07.07.109c8e0`.
